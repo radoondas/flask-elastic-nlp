@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Image Search</h1>
+<section class="section">
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+        <div class="field">
+            {{ form.searchbox.label(class_="label") }}
+            {{ form.searchbox(size=32, class_="input is-link") }}
+        </div>
+        </p>
+
+        <p>{{ form.submit(class_="button is-link") }}</p>
+    </form>
+</section>
+
+<section class="section">
+    <p>
+        Note: The Lite dataset contains all of the same fields as the Full dataset, but is limited to ~25,000 photos.
+    </p>
+</section>
+
+{% if search_results %}
+
+<section class="section">
+    <div class="container">
+        Search Query: {{ query }}
+        <hr>
+        <table class="table is-striped is-fullwidth">
+            <thead>
+            <tr>
+                <th><abbr title="Photo Description">Title</abbr></th>
+                <th><abbr title="AI Description">AI description</abbr></th>
+                <th><abbr title="Photo Url">Photo URL</abbr></th>
+                <th><abbr title="Score">Score</abbr></th>
+                <th><abbr title="Photo">Photo</abbr></th>
+            </tr>
+            </thead>
+            {% for document in search_results %}
+
+            <tr>
+                <td>
+                    {{ document.fields.photo_description[0] }}
+                </td>
+                <td>
+                    {{ document.fields.ai_description[0] }}
+                </td>
+                <td>
+                    <a href="{{ document.fields.photo_url[0] }}" target="_blank">{{ document.fields.ai_description[0] }}</a>
+                </td>
+                 <td>
+                    {{ document._score }}
+                </td>
+                 <td>
+                    <img src="{{ document.fields.photo_image_url[0] }}", alt="{{ document.fields.photo_description[0] }}">
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</section>
+
+{% endif %}
+
+{% endblock %}

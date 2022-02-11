@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">NER</h1>
+<section class="section">
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+        <div class="field">
+            {{ form.searchbox.label(class_="label") }}
+            {{ form.searchbox(size=32, class_="input is-link") }}
+        </div>
+        </p>
+
+        <p>{{ form.submit(class_="button is-link") }}</p>
+    </form>
+</section>
+
+{% if search_results %}
+
+<section class="section">
+    <div class="container">
+        Search Query: {{ query }}
+        <hr>
+        <p> Predicted value: {{ search_results.predicted_value }}</p>
+
+        {% for entity in search_results.entities %}
+            <p>
+                <ul>
+                  <li>Entity: {{ entity.entity }}</li>
+                  <li>Class name: {{ entity.class_name }}</li>
+                  <li>Class probability: {{ entity.class_probability }}</li>
+                </ul>
+        <hr>
+            </p>
+            {% endfor %}
+    </div>
+</section>
+
+{% endif %}
+
+{% endblock %}

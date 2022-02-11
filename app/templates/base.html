@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+
+    <title>{{ title }} - Elastic NLP implementation</title>
+</head>
+<body>
+
+<nav class="navbar is-dark">
+    <div id="navbarTransparent" class="navbar-menu">
+        <div class="navbar-start">
+            <a class="navbar-item" href="{{ url_for('index') }}">Home</a>
+            <a class="navbar-item" href="{{ url_for('search') }}">Image Search</a>
+            <a class="navbar-item" href="{{ url_for('classification') }}">Classification</a>
+            <a class="navbar-item" href="{{ url_for('ner') }}">NER</a>
+        </div>
+    </div>
+</nav>
+
+<section class="section">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <article class="message is-info">
+        <div class="message-header">
+            <p>Info</p>
+        </div>
+        <div class="message-body">
+            <ul>
+                {% for message in messages %}
+                <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+
+        </div>
+    </article>
+    {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</section>
+
+<footer class="footer has-text-centered has-background-white-ter">
+<!--    <div class="content has-text-grey-dark">-->
+<!--        <p>-->
+<!--            <a href="https://palletsprojects.com/p/flask/" rel="external">Flask</a> and-->
+<!--            <a href="https://https://bulma.io" rel="external"> Bulma</a>.-->
+<!--        </p>-->
+<!--    </div>-->
+</footer>
+</body>
+</html>

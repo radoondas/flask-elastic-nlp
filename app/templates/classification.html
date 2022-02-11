@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Classification</h1>
+<section class="section">
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+        <div class="field">
+            {{ form.searchbox.label(class_="label") }}
+            {{ form.searchbox(size=32, class_="input is-link") }}
+        </div>
+        </p>
+
+        <p>{{ form.submit(class_="button is-link") }}</p>
+    </form>
+</section>
+
+{% if search_results %}
+
+<section class="section">
+    <div class="container">
+        Search Query: {{ query }}
+        <hr>
+        <p>
+            Predicted value: {{ search_results.predicted_value }}
+            {% if search_results.predicted_value == 'POSITIVE' %}
+                <p style="font-size:100px">&#128513;</p>
+            {% elif search_results.predicted_value == 'NEGATIVE' %}
+                <p style="font-size:100px">&#128530;</p>
+            {% endif %}
+        </p>
+        <p>
+            Prediction probability: {{ search_results.prediction_probability}}
+        </p>
+    </div>
+</section>
+
+{% endif %}
+
+{% endblock %}
