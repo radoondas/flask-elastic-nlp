@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Embeddings</h1>
+<section class="section">
+     <div class="box has-background-warning-light">
+        <p>
+            <b>Try one of the following examples:</b>
+        <ul>
+            <li>What was Jean Valjean prisoner number?</li>
+            <li>How much could Jean Valjean sell the candlesticks?</li>
+        </ul>
+        </p>
+    </div>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+        <div class="field">
+            {{ form.searchbox.label(class_="label") }}
+            {{ form.searchbox(size=32, class_="input is-link") }}
+        </div>
+        </p>
+
+        <p>{{ form.submit(class_="button is-link") }}</p>
+    </form>
+</section>
+
+{% if search_results %}
+
+<section class="section">
+    <div class="container">
+        Search Query: {{ query }}
+        <hr>
+        <table class="table is-striped is-fullwidth">
+            <thead>
+            <tr>
+                <th><abbr title="Score">Score</abbr></th>
+                <th><abbr title="Line">Line</abbr></th>
+                <th><abbr title="Paragraph">Paragraph</abbr></th>
+            </tr>
+            </thead>
+            {% for document in search_results %}
+
+            <tr>
+                <td>
+                    {{ document._score }}
+                </td>
+                <td>
+                    {{ document._source.line }}
+                </td>
+                 <td>
+                    {{ document._source.paragraph }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</section>
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title">Fill Mask</h1>
+<p>
+    Results are based on model <a href="<TODO>">bert-base-uncased</a>, and model
+    must be imported into Elasticsearch cluster to function properly.
+</p>
+<section class="section">
+    <div class="box has-background-warning-light">
+        <p>
+            <strong>Try one of the following examples:</strong> Note: string <strong>"[MASK]"</strong> is required in
+            the text.
+        <ul>
+            <li>Paris is the [MASK] of France.</li>
+            <li>Amsterdam is a city in the [MASK].</li>
+        </ul>
+        </p>
+    </div>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+        <div class="field">
+            {{ form.searchbox.label(class_="label") }}
+            {{ form.searchbox(size=32, class_="input is-link") }}
+        </div>
+        </p>
+
+        <p>{{ form.submit(class_="button is-link") }}</p>
+    </form>
+</section>
+
+{% if search_results %}
+
+<section class="section">
+    <div class="container">
+        Search Query: {{ query }}
+        <hr>
+        <p>
+        <ul>
+            <li>Predicted value: <strong>{{ search_results.predicted_value }}</strong></li>
+            <li>Predicted Value Sequence: <strong>{{ search_results.predicted_value_sequence }}</strong></li>
+            <li>Prediction Probability: {{ search_results.prediction_probability }}</li>
+        </ul>
+        </p>
+    </div>
+</section>
+
+{% endif %}
+
+{% endblock %}

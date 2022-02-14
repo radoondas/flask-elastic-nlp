@@ -3,6 +3,16 @@
 {% block content %}
 <h1 class="title">Classification</h1>
 <section class="section">
+    <div class="box has-background-warning-light">
+        <p>
+            <b>Try one of the following examples:</b>
+        <ul>
+            <li>I didn't like the soundtrack from the movie Dune</li>
+            <li>Elastic is the perfect platform for knowledgebase NLP applications</li>
+            <li>Temperartures are average this year</li>
+        </ul>
+        </p>
+    </div>
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
         <p>
@@ -23,7 +33,7 @@
         Search Query: {{ query }}
         <hr>
         <p>
-            Predicted value: {{ search_results.predicted_value }}
+            Predicted value: <strong>{{ search_results.predicted_value }}</strong>
             {% if search_results.predicted_value == 'POSITIVE' %}
                 <p style="font-size:100px">&#128513;</p>
             {% elif search_results.predicted_value == 'NEGATIVE' %}

@@ -2,6 +2,16 @@
 
 {% block content %}
 <h1 class="title">Image Search</h1>
+
+<div class="box has-background-warning-light">
+    <p>
+        <b>Try one of the following examples:</b>
+    <ul>
+        <li>A mountain covered in snow</li>
+        <li>Valentine day flowers</li>
+    </ul>
+    </p>
+</div>
 <section class="section">
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
@@ -14,12 +24,6 @@
 
         <p>{{ form.submit(class_="button is-link") }}</p>
     </form>
-</section>
-
-<section class="section">
-    <p>
-        Note: The Lite dataset contains all of the same fields as the Full dataset, but is limited to ~25,000 photos.
-    </p>
 </section>
 
 {% if search_results %}
@@ -48,13 +52,15 @@
                     {{ document.fields.ai_description[0] }}
                 </td>
                 <td>
-                    <a href="{{ document.fields.photo_url[0] }}" target="_blank">{{ document.fields.ai_description[0] }}</a>
+                    <a href="{{ document.fields.photo_url[0] }}" target="_blank">{{ document.fields.ai_description[0]
+                        }}</a>
                 </td>
-                 <td>
+                <td>
                     {{ document._score }}
                 </td>
-                 <td>
-                    <img src="{{ document.fields.photo_image_url[0] }}", alt="{{ document.fields.photo_description[0] }}">
+                <td>
+                    <img src="{{ document.fields.photo_image_url[0] }}" ,
+                         alt="{{ document.fields.photo_description[0] }}">
                 </td>
             </tr>
             {% endfor %}

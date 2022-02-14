@@ -7,7 +7,11 @@ import requests
 INFER_ENDPOINT = '/_ml/trained_models/sentence-transformers__clip-vit-b-32-multilingual-v1/deployment/_infer'
 INFER_ENDPOINT_TEXT_CLASS = "/_ml/trained_models/distilbert-base-uncased-finetuned-sst-2-english/deployment/_infer"
 INFER_ENDPOINT_NER = "/_ml/trained_models/dslim__bert-base-ner/deployment/_infer"
-KNN_SEARCH = '/image-embeddings/_knn_search'
+INFER_ENDPOINT_FILL_MASK = "/_ml/trained_models/bert-base-uncased/deployment/_infer"
+INFER_ENDPOINT_LES_MISERABLE = "/_ml/trained_models/sentence-transformers__msmarco-minilm-l-12-v3/deployment/_infer"
+KNN_SEARCH_IMAGES = '/image-embeddings/_knn_search'
+KNN_SEARCH_LES_MISERABLE = '/les-miserable-embedded/_knn_search'
+
 
 HOST = app.config['ELASTICSEARCH_HOST']
 AUTH = (app.config['ELASTICSEARCH_USER'], app.config['ELASTICSEARCH_PASSWORD'])
@@ -31,9 +35,8 @@ def search():
             # print("Method: " + request.method)
             # print("Searchbox data:" + form.searchbox.data)
 
-            em = sentence_embedding(form.searchbox.data)
-            search_response = knn_search(em)
-            print_hits(search_response)
+            embeddings = sentence_embedding(form.searchbox.data)
+            search_response = knn_search_images(embeddings)
 
             return render_template('search.html', title='Image search', form=form, search_results=search_response.json()['hits']['hits'], query=form.searchbox.data)
 
@@ -66,7 +69,7 @@ def ner():
     # Check for  method
     if request.method == 'POST':
         if form.validate_on_submit():
-            search_response = ner_nlp(form.searchbox.data)
+            search_response = ner_nlp_query(form.searchbox.data)
 
             return render_template('ner.html', title='NER', form=form,
                                    search_results=search_response, query=form.searchbox.data)
@@ -77,6 +80,40 @@ def ner():
         return render_template('ner.html', title='NER', form=form)
 
 
+@app.route('/fill_mask', methods=['GET', 'POST'])
+def fill_mask():
+    form = SearchForm()
+    # Check for  method
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            search_response = fill_mask_query(form.searchbox.data)
+
+            return render_template('fill_mask.html', title='Fill Mask', form=form,
+                                   search_results=search_response, query=form.searchbox.data)
+
+        else:
+            return redirect(url_for('fill_mask'))
+    else:  # GET
+        return render_template('fill_mask.html', title='Fill Mask', form=form)
+
+
+@app.route('/embeddings', methods=['GET', 'POST'])
+def embeddings():
+    form = SearchForm()
+    # Check for  method
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            embeddings_response = sentence_embedding_les_miserable(form.searchbox.data)
+            search_response = knn_search_embeddings(embeddings_response)
+
+            return render_template('embeddings.html', title='Embeddings', form=form, search_results=search_response.json()['hits']['hits'], query=form.searchbox.data)
+
+        else:
+            return redirect(url_for('embeddings'))
+    else:  # GET
+        return render_template('embeddings.html', title='Embeddings', form=form)
+
+
 def sentence_embedding(query: str):
     inf = '{ "docs" : [ {"text_field": "' + query + '"} ] }'
 
@@ -85,18 +122,18 @@ def sentence_embedding(query: str):
     return response.json()['predicted_value']
 
 
-def knn_search(dense_vector: list):
+def knn_search_images(dense_vector: list):
     query = ('{ "knn" : '
              '{"field": "image_embedding",'
              '"k": 5,'
              '"num_candidates": 100,'
              '"query_vector" : ' + str(dense_vector) + '},'
-                                                       '"fields": ["photo_description", "ai_description", "photo_url", "photo_image_url"],'
-                                                       '"_source": false'
-                                                       '}'
+             '"fields": ["photo_description", "ai_description", "photo_url", "photo_image_url"],'
+             '"_source": false'
+             '}'
              )
 
-    return requests.get(HOST + KNN_SEARCH, auth=AUTH, headers=HEADERS, data=query)
+    return requests.get(HOST + KNN_SEARCH_IMAGES, auth=AUTH, headers=HEADERS, data=query)
 
 
 def print_hits(search_response):
@@ -118,8 +155,36 @@ def text_classification(query: str):
     return response.json()
 
 
-def ner_nlp(query: str):
+def ner_nlp_query(query: str):
     inf = '{ "docs": { "text_field": "' + query + '"} }'
     response = requests.post(HOST + INFER_ENDPOINT_NER, auth=AUTH, headers=HEADERS, data=inf)
 
     return response.json()
+
+
+def fill_mask_query(query: str):
+    inf = '{ "docs": { "text_field": "' + query + '"} }'
+    response = requests.post(HOST + INFER_ENDPOINT_FILL_MASK, auth=AUTH, headers=HEADERS, data=inf)
+
+    return response.json()
+
+
+def sentence_embedding_les_miserable(query: str):
+    inf = '{ "docs" : [ {"text_field": "' + query + '"} ] }'
+
+    response = requests.post(HOST + INFER_ENDPOINT_LES_MISERABLE, auth=AUTH, headers=HEADERS, data=inf)
+
+    return response.json()['predicted_value']
+
+
+def knn_search_embeddings(dense_vector: list):
+    query = ('{  "_source": ["paragraph", "line"], '
+             '"knn" : {'
+             '"field": "ml.inference.predicted_value",'
+             '"k": 5,'
+             '"num_candidates": 10,'
+             '"query_vector" : ' + str(dense_vector) + '}'
+             '}'
+             )
+
+    return requests.get(HOST + KNN_SEARCH_LES_MISERABLE, auth=AUTH, headers=HEADERS, data=query)
