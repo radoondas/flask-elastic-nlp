@@ -9,18 +9,22 @@
 </head>
 <body>
 
-<nav class="navbar is-dark">
-    <div id="navbarTransparent" class="navbar-menu">
-        <div class="navbar-start">
-            <a class="navbar-item" href="{{ url_for('index') }}">Home</a>
-            <a class="navbar-item" href="{{ url_for('search') }}">Image Search</a>
-            <a class="navbar-item" href="{{ url_for('classification') }}">Classification</a>
-            <a class="navbar-item" href="{{ url_for('ner') }}">NER</a>
-            <a class="navbar-item" href="{{ url_for('fill_mask') }}">Fill Mask</a>
-            <a class="navbar-item" href="{{ url_for('embeddings') }}">Embeddings</a>
+
+<div class="container">
+    <nav class="navbar is-dark">
+        <div id="navbarTransparent" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item" href="{{ url_for('index') }}">Home</a>
+                <a class="navbar-item" href="{{ url_for('search') }}">Image Search</a>
+                <a class="navbar-item" href="{{ url_for('classification') }}">Classification</a>
+                <a class="navbar-item" href="{{ url_for('ner') }}">NER</a>
+                <a class="navbar-item" href="{{ url_for('fill_mask') }}">Fill Mask</a>
+                <a class="navbar-item" href="{{ url_for('embeddings') }}">Embeddings</a>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
+</div>
+
 
 <section class="section">
     {% with messages = get_flashed_messages() %}
@@ -47,12 +51,12 @@
 </section>
 
 <footer class="footer has-text-centered has-background-white-ter">
-<!--    <div class="content has-text-grey-dark">-->
-<!--        <p>-->
-<!--            <a href="https://palletsprojects.com/p/flask/" rel="external">Flask</a> and-->
-<!--            <a href="https://https://bulma.io" rel="external"> Bulma</a>.-->
-<!--        </p>-->
-<!--    </div>-->
+    <!--    <div class="content has-text-grey-dark">-->
+    <!--        <p>-->
+    <!--            <a href="https://palletsprojects.com/p/flask/" rel="external">Flask</a> and-->
+    <!--            <a href="https://https://bulma.io" rel="external"> Bulma</a>.-->
+    <!--        </p>-->
+    <!--    </div>-->
 </footer>
 </body>
 </html>
