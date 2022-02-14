@@ -37,3 +37,5 @@ To run the application in a Docker container you have 2 options.
 1. Build the image: `docker build . --tag elastic-nlp/flask-nlp:0.0.1`
 2. Run: `docker run -p 5000:5001 --rm -e ES_HOST='http://localhost:9200' -e ES_USER='elastic' -e ES_PWD='password' elastic-nlp/flask-nlp:0.0.1`
 3. Access URL `127.0.0.1:5001`
+
+![](app.png)
