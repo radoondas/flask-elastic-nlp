@@ -1,27 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="title">Image Search</h1>
+<h1 class="title">Similar Image</h1>
 
-<div class="box has-background-warning-light">
+{% if err %}
+<div class="box has-background-danger-light">
     <p>
-        <b>Try one of the following examples:</b>
-    <ul>
-        <li>A mountain covered in snow</li>
-        <li>Valentine day flowers</li>
-    </ul>
+        <strong>{{ err }}</strong>
     </p>
 </div>
-<section class="section">
-    <form action="" method="post" novalidate>
-        {{ form.hidden_tag() }}
-        <p>
-        <div class="field">
-            {{ form.searchbox.label(class_="label") }}
-            {{ form.searchbox(size=32, class_="input is-info") }}
-        </div>
-        </p>
+{% endif %}
 
+<section class="section">
+    <form method="post" enctype="multipart/form-data">
+        <p>
+        {{ form.hidden_tag() }}
+        {{ form.file(size=32, class_="input is-info") }}
+        </p>
         <p>{{ form.submit(class_="button is-info") }}</p>
     </form>
 </section>
@@ -30,7 +25,7 @@
 
 <section class="section">
     <div class="container">
-        Search Query: {{ query }}
+        <img src="{{ original_file }}">
         <hr>
         <table class="table is-striped is-fullwidth">
             <thead>

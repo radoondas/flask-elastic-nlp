@@ -3,3 +3,5 @@ wtforms==3.0.1
 flask-wtf==1.0.0
 requests==2.27.1
 python-dotenv==0.19.2
+Werkzeug~=2.0.3
+sentence-transformers~=2.2.0

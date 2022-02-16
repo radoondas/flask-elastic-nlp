@@ -1,7 +1,12 @@
 from app import app
 from flask import render_template, redirect, url_for, request
 from app.searchForm import SearchForm
+from app.inputFileForm import InputFileForm
+from werkzeug.utils import secure_filename
 import requests
+import os
+from sentence_transformers import SentenceTransformer
+from PIL import Image
 
 
 INFER_ENDPOINT = '/_ml/trained_models/sentence-transformers__clip-vit-b-32-multilingual-v1/deployment/_infer'
@@ -90,7 +95,6 @@ def fill_mask():
 
             return render_template('fill_mask.html', title='Fill Mask', form=form,
                                    search_results=search_response, query=form.searchbox.data)
-
         else:
             return redirect(url_for('fill_mask'))
     else:  # GET
@@ -112,6 +116,42 @@ def embeddings():
             return redirect(url_for('embeddings'))
     else:  # GET
         return render_template('embeddings.html', title='Embeddings', form=form)
+
+
+@app.route('/similar_image', methods=['GET', 'POST'])
+def similar_image():
+    form = InputFileForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            if request.files['file'].filename == '':
+                return render_template('similar_image.html', title='Vision', form=form, err='No selected file')
+
+            filename = secure_filename(form.file.data.filename)
+
+            url_dir = 'static/tmp-uploads/'
+            upload_dir = 'app/' + url_dir
+            upload_exists = os.path.exists(upload_dir)
+            if not upload_exists:
+                # Create a new directory because it does not exist
+                os.makedirs(upload_dir)
+                print("The new directory is created!")
+
+            file_path = upload_dir + filename
+            url_path_file = url_dir + filename
+            form.file.data.save(upload_dir + filename)
+
+            # TODO: add delete image
+
+            img_model = SentenceTransformer('clip-ViT-B-32')
+            embedding = image_embedding(file_path, img_model)
+            # Execute KN search over the image dataset
+            search_response = knn_search_images(embedding.tolist())
+
+            return render_template('similar_image.html', title='Vision', form=form, search_results=search_response.json()['hits']['hits'], original_file=url_path_file)
+        else:
+            return redirect(url_for('cloud_vision'))
+    else:
+        return render_template('similar_image.html', title='Vision', form=form)
 
 
 def sentence_embedding(query: str):
@@ -188,3 +228,14 @@ def knn_search_embeddings(dense_vector: list):
              )
 
     return requests.get(HOST + KNN_SEARCH_LES_MISERABLE, auth=AUTH, headers=HEADERS, data=query)
+
+
+def image_embedding(image, model):
+    return model.encode(image)
+
+
+def load_image(url_or_path) -> Image:
+    if url_or_path.startswith("http://") or url_or_path.startswith("https://"):
+        return Image.open(requests.get(url_or_path, stream=True).raw)
+    else:
+        return Image.open(url_or_path)
