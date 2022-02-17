@@ -150,8 +150,8 @@ def similar_image():
             search_response = knn_search_images(embedding.tolist())
 
             # Cleanup uploaded file after not needed
-            if os.path.exists(file_path):
-                os.remove(file_path)
+            # if os.path.exists(file_path):
+            #     os.remove(file_path)
 
             return render_template('similar_image.html', title='Vision', form=form, search_results=search_response.json()['hits']['hits'], original_file=url_path_file)
         else:
