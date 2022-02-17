@@ -130,22 +130,28 @@ def similar_image():
 
             url_dir = 'static/tmp-uploads/'
             upload_dir = 'app/' + url_dir
-            upload_exists = os.path.exists(upload_dir)
-            if not upload_exists:
+            upload_dir_exists = os.path.exists(upload_dir)
+            if not upload_dir_exists:
                 # Create a new directory because it does not exist
                 os.makedirs(upload_dir)
-                print("The new directory is created!")
 
+            # physical file-dir path
             file_path = upload_dir + filename
+            # relative file path for URL
             url_path_file = url_dir + filename
+            # Save the image
             form.file.data.save(upload_dir + filename)
 
-            # TODO: add delete image
-
+            # Load model, run against the image and create image embedding
             img_model = SentenceTransformer('clip-ViT-B-32')
             embedding = image_embedding(file_path, img_model)
+
             # Execute KN search over the image dataset
             search_response = knn_search_images(embedding.tolist())
+
+            # Cleanup uploaded file after not needed
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
             return render_template('similar_image.html', title='Vision', form=form, search_results=search_response.json()['hits']['hits'], original_file=url_path_file)
         else:
