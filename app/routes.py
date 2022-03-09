@@ -3,6 +3,7 @@ from flask import render_template, redirect, url_for, request
 from app.searchForm import SearchForm
 from app.inputFileForm import InputFileForm
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
 import requests
 import os
 from sentence_transformers import SentenceTransformer
@@ -35,11 +36,6 @@ def search():
     # Check for  method
     if request.method == 'POST':
         if form.validate_on_submit():
-            # print("Other: " + str(form.validate_on_submit()))
-            # print("Query: " + request.args.get('query'))
-            # print("Method: " + request.method)
-            # print("Searchbox data:" + form.searchbox.data)
-
             embeddings = sentence_embedding(form.searchbox.data)
             search_response = knn_search_images(embeddings)
 
@@ -124,7 +120,7 @@ def similar_image():
     if request.method == 'POST':
         if form.validate_on_submit():
             if request.files['file'].filename == '':
-                return render_template('similar_image.html', title='Vision', form=form, err='No selected file')
+                return render_template('similar_image.html', title='Similar image', form=form, err='No file selected')
 
             filename = secure_filename(form.file.data.filename)
 
@@ -153,11 +149,19 @@ def similar_image():
             # if os.path.exists(file_path):
             #     os.remove(file_path)
 
-            return render_template('similar_image.html', title='Vision', form=form, search_results=search_response.json()['hits']['hits'], original_file=url_path_file)
+            return render_template('similar_image.html', title='Similar image', form=form, search_results=search_response.json()['hits']['hits'], original_file=url_path_file)
         else:
-            return redirect(url_for('cloud_vision'))
+            return redirect(url_for('similar_image'))
     else:
-        return render_template('similar_image.html', title='Vision', form=form)
+        return render_template('similar_image.html', title='Similar image', form=form)
+
+
+@app.errorhandler(413)
+@app.errorhandler(RequestEntityTooLarge)
+def app_handle_413(e):
+    print("Hi 413!")
+    return render_template('error.413.html', title=e.name, e_name=e.name, e_desc=e.description, max_bytes=app.config[
+        "MAX_CONTENT_LENGTH"])
 
 
 def sentence_embedding(query: str):
