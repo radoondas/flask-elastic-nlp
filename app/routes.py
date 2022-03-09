@@ -1,5 +1,5 @@
 from app import app
-from flask import render_template, redirect, url_for, request
+from flask import render_template, redirect, url_for, request, flash
 from app.searchForm import SearchForm
 from app.inputFileForm import InputFileForm
 from werkzeug.utils import secure_filename
@@ -159,7 +159,6 @@ def similar_image():
 @app.errorhandler(413)
 @app.errorhandler(RequestEntityTooLarge)
 def app_handle_413(e):
-    print("Hi 413!")
     return render_template('error.413.html', title=e.name, e_name=e.name, e_desc=e.description, max_bytes=app.config[
         "MAX_CONTENT_LENGTH"])
 
