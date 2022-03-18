@@ -1,4 +1,4 @@
-from app import app
+from app import app, img_model
 from flask import render_template, redirect, url_for, request, flash
 from app.searchForm import SearchForm
 from app.inputFileForm import InputFileForm
@@ -138,9 +138,8 @@ def similar_image():
             # Save the image
             form.file.data.save(upload_dir + filename)
 
-            # Load model, run against the image and create image embedding
-            img_model = SentenceTransformer('clip-ViT-B-32')
-            embedding = image_embedding(file_path, img_model)
+            image = Image.open(file_path)
+            embedding = image_embedding(image, img_model)
 
             # Execute KN search over the image dataset
             search_response = knn_search_images(embedding.tolist())
