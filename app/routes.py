@@ -1,27 +1,31 @@
 from app import app, img_model
-from flask import render_template, redirect, url_for, request, flash
+from flask import render_template, redirect, url_for, request
 from app.searchForm import SearchForm
 from app.inputFileForm import InputFileForm
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 import requests
 import os
-from sentence_transformers import SentenceTransformer
 from PIL import Image
 
+INFER_ENDPOINT = "/_ml/trained_models/{model}/deployment/_infer"
 
-INFER_ENDPOINT = '/_ml/trained_models/sentence-transformers__clip-vit-b-32-multilingual-v1/deployment/_infer'
-INFER_ENDPOINT_TEXT_CLASS = "/_ml/trained_models/distilbert-base-uncased-finetuned-sst-2-english/deployment/_infer"
-INFER_ENDPOINT_NER = "/_ml/trained_models/dslim__bert-base-ner/deployment/_infer"
-INFER_ENDPOINT_FILL_MASK = "/_ml/trained_models/bert-base-uncased/deployment/_infer"
-INFER_ENDPOINT_LES_MISERABLE = "/_ml/trained_models/sentence-transformers__msmarco-minilm-l-12-v3/deployment/_infer"
-KNN_SEARCH_IMAGES = '/image-embeddings/_knn_search'
-KNN_SEARCH_LES_MISERABLE = '/les-miserable-embedded/_knn_search'
+INFER_MODEL_IM_SEARCH = 'sentence-transformers__clip-vit-b-32-multilingual-v1'
+INFER_MODEL_TEXT_CLASS = 'distilbert-base-uncased-finetuned-sst-2-english'
+INFER_MODEL_NER = 'dslim__bert-base-ner'
+INFER_MODEL_FILL_MASK = 'bert-base-uncased'
+INFER_MODEL_LES_MISERABLE = 'sentence-transformers__msmarco-minilm-l-12-v3'
 
+INDEX_IM_EMBED = 'image-embeddings'
+KNN_SEARCH_IMAGES = "/{}/_knn_search".format(INDEX_IM_EMBED)
+INDEX_LES_MIS = 'les-miserable-embedded'
+KNN_SEARCH_LES_MISERABLE = "/{}/_knn_search".format(INDEX_LES_MIS)
 
 HOST = app.config['ELASTICSEARCH_HOST']
 AUTH = (app.config['ELASTICSEARCH_USER'], app.config['ELASTICSEARCH_PASSWORD'])
 HEADERS = {'Content-Type': 'application/json'}
+
+app_models = {}
 
 
 @app.route('/')
@@ -32,90 +36,140 @@ def index():
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    form = SearchForm()
-    # Check for  method
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            embeddings = sentence_embedding(form.searchbox.data)
-            search_response = knn_search_images(embeddings)
+    global app_models
+    is_model_up_and_running(INFER_MODEL_IM_SEARCH)
 
-            return render_template('search.html', title='Image search', form=form, search_results=search_response.json()['hits']['hits'], query=form.searchbox.data)
+    index_name = INDEX_IM_EMBED
+    if not is_index_present(index_name):
+        return render_template('search.html', title='Image search', model_up=False,
+                               index_name=index_name, missing_index=True)
 
-        else:
-            return redirect(url_for('search'))
-    else:  # GET
-        return render_template('search.html', title='Image search', form=form)
+    if app_models.get(INFER_MODEL_IM_SEARCH) == 'started':
+        form = SearchForm()
+        # Check for  method
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                embeddings = sentence_embedding(form.searchbox.data)
+                search_response = knn_search_images(embeddings)
+
+                return render_template('search.html', title='Image search', form=form,
+                                       search_results=search_response.json()['hits']['hits'],
+                                       query=form.searchbox.data,  model_up=True)
+
+            else:
+                return redirect(url_for('search'))
+        else:  # GET
+            return render_template('search.html', title='Image search', form=form, model_up=True)
+    else:
+        return render_template('search.html', title='Image search', model_up=False, model_name=INFER_MODEL_IM_SEARCH)
 
 
 @app.route('/classification', methods=['GET', 'POST'])
 def classification():
-    form = SearchForm()
-    # Check for  method
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            search_response = text_classification(form.searchbox.data)
+    global app_models
+    is_model_up_and_running(INFER_MODEL_TEXT_CLASS)
 
-            return render_template('classification.html', title='Classification', form=form,
-                                   search_results=search_response, query=form.searchbox.data)
+    if app_models.get(INFER_MODEL_TEXT_CLASS) == 'started':
+        form = SearchForm()
+        # Check for  method
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                search_response = text_classification(form.searchbox.data)
 
-        else:
-            return redirect(url_for('classification'))
-    else:  # GET
-        return render_template('classification.html', title='Classification', form=form)
+                return render_template('classification.html', title='Classification', form=form,
+                                       search_results=search_response, query=form.searchbox.data, model_up=True)
+
+            else:
+                return redirect(url_for('classification'))
+        else:  # GET
+            return render_template('classification.html', title='Classification', form=form,  model_up=True)
+    else:
+        return render_template('classification.html', title='Classification', model_up=False,
+                               model_name=INFER_MODEL_TEXT_CLASS)
 
 
 @app.route('/ner', methods=['GET', 'POST'])
 def ner():
-    form = SearchForm()
-    # Check for  method
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            search_response = ner_nlp_query(form.searchbox.data)
+    global app_models
+    is_model_up_and_running(INFER_MODEL_NER)
 
-            return render_template('ner.html', title='NER', form=form,
-                                   search_results=search_response, query=form.searchbox.data)
+    if app_models.get(INFER_MODEL_NER) == 'started':
+        form = SearchForm()
+        # Check for  method
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                search_response = ner_nlp_query(form.searchbox.data)
 
-        else:
-            return redirect(url_for('ner'))
-    else:  # GET
-        return render_template('ner.html', title='NER', form=form)
+                return render_template('ner.html', title='NER', form=form, search_results=search_response,
+                                       query=form.searchbox.data, model_up=True)
+
+            else:
+                return redirect(url_for('ner'))
+        else:  # GET
+            return render_template('ner.html', title='NER', form=form, model_up=True)
+    else:
+        return render_template('ner.html', title='NER', model_up=False, model_name=INFER_MODEL_NER)
 
 
 @app.route('/fill_mask', methods=['GET', 'POST'])
 def fill_mask():
-    form = SearchForm()
-    # Check for  method
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            search_response = fill_mask_query(form.searchbox.data)
+    global app_models
+    is_model_up_and_running(INFER_MODEL_FILL_MASK)
 
-            return render_template('fill_mask.html', title='Fill Mask', form=form,
-                                   search_results=search_response, query=form.searchbox.data)
-        else:
-            return redirect(url_for('fill_mask'))
-    else:  # GET
-        return render_template('fill_mask.html', title='Fill Mask', form=form)
+    if app_models.get(INFER_MODEL_FILL_MASK) == 'started':
+        form = SearchForm()
+        # Check for  method
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                search_response = fill_mask_query(form.searchbox.data)
+
+                return render_template('fill_mask.html', title='Fill Mask', form=form,
+                                       search_results=search_response, query=form.searchbox.data, model_up=True)
+            else:
+                return redirect(url_for('fill_mask'))
+        else:  # GET
+            return render_template('fill_mask.html', title='Fill Mask', form=form, model_up=True)
+    else:
+        return render_template('fill_mask.html', title='Fill Mask', model_up=False, model_name=INFER_MODEL_FILL_MASK)
 
 
 @app.route('/embeddings', methods=['GET', 'POST'])
 def embeddings():
-    form = SearchForm()
-    # Check for  method
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            embeddings_response = sentence_embedding_les_miserable(form.searchbox.data)
-            search_response = knn_search_embeddings(embeddings_response)
+    global app_models
+    is_model_up_and_running(INFER_MODEL_LES_MISERABLE)
 
-            return render_template('embeddings.html', title='Embeddings', form=form, search_results=search_response.json()['hits']['hits'], query=form.searchbox.data)
+    index_name = INDEX_LES_MIS
+    if not is_index_present(index_name):
+        return render_template('embeddings.html', title='Embeddings', model_up=False,
+                               index_name=index_name, missing_index=True)
 
-        else:
-            return redirect(url_for('embeddings'))
-    else:  # GET
-        return render_template('embeddings.html', title='Embeddings', form=form)
+    if app_models.get(INFER_MODEL_LES_MISERABLE) == 'started':
+        form = SearchForm()
+        # Check for  method
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                embeddings_response = sentence_embedding_les_miserable(form.searchbox.data)
+                search_response = knn_search_embeddings(embeddings_response)
+
+                return render_template('embeddings.html', title='Embeddings', form=form,
+                                       search_results=search_response.json()['hits']['hits'],
+                                       query=form.searchbox.data, model_up=True, missing_index=False)
+
+            else:
+                return redirect(url_for('embeddings'))
+        else:  # GET
+            return render_template('embeddings.html', title='Embeddings', form=form, model_up=True, missing_index=False)
+    else:
+        return render_template('embeddings.html', title='Embeddings', model_up=False,
+                               model_name=INFER_MODEL_LES_MISERABLE, missing_index=False)
 
 
 @app.route('/similar_image', methods=['GET', 'POST'])
 def similar_image():
+    index_name = INDEX_IM_EMBED
+    if not is_index_present(index_name):
+        return render_template('similar_image.html', title='Similar image', index_name=index_name, missing_index=True)
+
     form = InputFileForm()
     if request.method == 'POST':
         if form.validate_on_submit():
@@ -158,15 +212,14 @@ def similar_image():
 @app.errorhandler(413)
 @app.errorhandler(RequestEntityTooLarge)
 def app_handle_413(e):
-    return render_template('error.413.html', title=e.name, e_name=e.name, e_desc=e.description, max_bytes=app.config[
-        "MAX_CONTENT_LENGTH"])
+    return render_template('error.413.html', title=e.name, e_name=e.name, e_desc=e.description,
+                           max_bytes=app.config["MAX_CONTENT_LENGTH"])
 
 
 def sentence_embedding(query: str):
-    inf = '{ "docs" : [ {"text_field": "' + query + '"} ] }'
-
-    response = requests.post(HOST + INFER_ENDPOINT, auth=AUTH, headers=HEADERS, data=inf)
-
+    query = '{ "docs" : [ {"text_field": "' + query + '"} ] }'
+    response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_IM_SEARCH), auth=AUTH,
+                             headers=HEADERS, data=query)
     return response.json()['predicted_value']
 
 
@@ -180,7 +233,6 @@ def knn_search_images(dense_vector: list):
              '"_source": false'
              '}'
              )
-
     return requests.get(HOST + KNN_SEARCH_IMAGES, auth=AUTH, headers=HEADERS, data=query)
 
 
@@ -197,31 +249,29 @@ def print_hits(search_response):
 
 
 def text_classification(query: str):
-    inf = '{ "docs": { "text_field": "' + query + '"} }'
-    response = requests.post(HOST + INFER_ENDPOINT_TEXT_CLASS, auth=AUTH, headers=HEADERS, data=inf)
-
+    query = '{ "docs": { "text_field": "' + query + '"} }'
+    response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_TEXT_CLASS), auth=AUTH,
+                             headers=HEADERS, data=query)
     return response.json()
 
 
 def ner_nlp_query(query: str):
-    inf = '{ "docs": { "text_field": "' + query + '"} }'
-    response = requests.post(HOST + INFER_ENDPOINT_NER, auth=AUTH, headers=HEADERS, data=inf)
-
+    query = '{ "docs": { "text_field": "' + query + '"} }'
+    response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_NER), auth=AUTH, headers=HEADERS, data=query)
     return response.json()
 
 
 def fill_mask_query(query: str):
-    inf = '{ "docs": { "text_field": "' + query + '"} }'
-    response = requests.post(HOST + INFER_ENDPOINT_FILL_MASK, auth=AUTH, headers=HEADERS, data=inf)
-
+    query = '{ "docs": { "text_field": "' + query + '"} }'
+    response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_FILL_MASK), auth=AUTH,
+                             headers=HEADERS, data=query)
     return response.json()
 
 
 def sentence_embedding_les_miserable(query: str):
-    inf = '{ "docs" : [ {"text_field": "' + query + '"} ] }'
-
-    response = requests.post(HOST + INFER_ENDPOINT_LES_MISERABLE, auth=AUTH, headers=HEADERS, data=inf)
-
+    query = '{ "docs" : [ {"text_field": "' + query + '"} ] }'
+    response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_LES_MISERABLE), auth=AUTH,
+                             headers=HEADERS, data=query)
     return response.json()['predicted_value']
 
 
@@ -234,7 +284,6 @@ def knn_search_embeddings(dense_vector: list):
              '"query_vector" : ' + str(dense_vector) + '}'
              '}'
              )
-
     return requests.get(HOST + KNN_SEARCH_LES_MISERABLE, auth=AUTH, headers=HEADERS, data=query)
 
 
@@ -242,8 +291,21 @@ def image_embedding(image, model):
     return model.encode(image)
 
 
-def load_image(url_or_path) -> Image:
-    if url_or_path.startswith("http://") or url_or_path.startswith("https://"):
-        return Image.open(requests.get(url_or_path, stream=True).raw)
+def is_model_up_and_running(model: str):
+    global app_models
+
+    endpoint = "/_ml/trained_models/{}/_stats".format(model)
+    resp = requests.get(HOST + endpoint, auth=AUTH, headers=HEADERS).json()
+
+    if "deployment_stats" in resp['trained_model_stats'][0]:
+        app_models[resp['trained_model_stats'][0]['model_id']] = resp['trained_model_stats'][0]['deployment_stats']['state']
     else:
-        return Image.open(url_or_path)
+        app_models[resp['trained_model_stats'][0]['model_id']] = 'down'
+
+
+def is_index_present(index_name: str):
+    r = requests.head(HOST + '/' + index_name, auth=AUTH)
+    if r.status_code == 200:
+        return True
+    else:
+        return False

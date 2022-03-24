@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 <h1 class="title">NER</h1>
 <p>
     Results are based on model <a href="https://huggingface.co/dslim/bert-base-NER">dslim__bert-base-ner</a>, and model
     must be imported into Elasticsearch cluster to function properly.
 </p>
+
+{% if model_up %}
 <section class="section">
     <div class="box has-background-warning-light">
         <p>
@@ -50,6 +53,16 @@
         {% endfor %}
     </div>
 </section>
+
+{% endif %}
+
+{% else %}
+<div class="box has-background-danger-light">
+    <p>
+        <strong> The NLP model ({{ model_name }}) required for this task is unavailable in Elasticsearch cluster. </br>Please make sure
+            the model is up and running.</strong>
+    </p>
+</div>
 
 {% endif %}
 

@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1 class="title">Similar Image</h1>
-
+{% if not missing_index %}
 {% if err %}
 <div class="box has-background-danger-light">
     <p>
@@ -66,5 +66,12 @@
 </section>
 
 {% endif %}
-
+{% else %}
+<div class="box has-background-danger-light">
+    <p>
+        <strong> The Index ({{ index_name }}) required for this task is unavailable in Elasticsearch cluster. </br>Please make sure
+            the index is available.</strong>
+    </p>
+</div>
+{% endif %}
 {% endblock %}
