@@ -229,7 +229,9 @@ def knn_search_images(dense_vector: list):
              '"k": 5,'
              '"num_candidates": 100,'
              '"query_vector" : ' + str(dense_vector) + '},'
-             '"fields": ["photo_description", "ai_description", "photo_url", "photo_image_url"],'
+             '"fields": ["photo_description", "ai_description", "photo_url", "photo_image_url", '
+                                                       '"photographer_first_name", "photographer_username", '
+                                                       '"photographer_last_name"], '
              '"_source": false'
              '}'
              )
