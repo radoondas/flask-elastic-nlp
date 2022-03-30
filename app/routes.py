@@ -297,12 +297,16 @@ def is_model_up_and_running(model: str):
     global app_models
 
     endpoint = "/_ml/trained_models/{}/_stats".format(model)
-    resp = requests.get(HOST + endpoint, auth=AUTH, headers=HEADERS).json()
+    r = requests.get(HOST + endpoint, auth=AUTH, headers=HEADERS)
+    json_response = r.json()
 
-    if "deployment_stats" in resp['trained_model_stats'][0]:
-        app_models[resp['trained_model_stats'][0]['model_id']] = resp['trained_model_stats'][0]['deployment_stats']['state']
-    else:
-        app_models[resp['trained_model_stats'][0]['model_id']] = 'down'
+    if r.status_code == 200:
+        if "deployment_stats" in json_response['trained_model_stats'][0]:
+            app_models[model] = json_response['trained_model_stats'][0]['deployment_stats']['state']
+        else:
+            app_models[model] = 'down'
+    elif r.status_code == 404:
+        app_models[model] = 'na'
 
 
 def is_index_present(index_name: str):
