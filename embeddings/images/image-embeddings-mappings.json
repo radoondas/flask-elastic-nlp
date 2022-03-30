@@ -1,0 +1,40 @@
+{
+  "settings": {
+    "index.refresh_interval": "5s",
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "image_embedding": {
+        "type": "dense_vector",
+        "dims": 512,
+        "index": true,
+        "similarity": "cosine"
+      },
+      "photo_id": {
+        "type": "keyword"
+      },
+      "photo_image_url": {
+        "type": "keyword"
+      },
+      "ai_description": {
+        "type": "text"
+      },
+      "photo_description": {
+        "type": "text"
+      },
+      "photo_url": {
+        "type": "keyword"
+      },
+      "photographer_first_name": {
+        "type": "keyword"
+      },
+      "photographer_last_name": {
+        "type": "keyword"
+      },
+      "photographer_username": {
+        "type": "keyword"
+      }
+    }
+  }
+}

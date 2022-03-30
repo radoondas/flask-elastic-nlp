@@ -1,0 +1,42 @@
+{
+  "settings": {
+    "number_of_shards": "1",
+    "number_of_replicas": "1"
+  },
+  "mappings" : {
+    "properties": {
+      "@timestamp": {
+        "type": "date"
+      },
+      "line": {
+        "type": "long"
+      },
+      "ml": {
+        "properties": {
+          "inference": {
+            "properties": {
+              "is_truncated": {
+                "type": "boolean"
+              },
+              "model_id": {
+                "type": "keyword"
+              },
+              "predicted_value": {
+                "type": "dense_vector",
+                "dims": 384,
+                "index": true,
+                "similarity": "l2_norm"
+              }
+            }
+          }
+        }
+      },
+      "paragraph": {
+        "type": "text"
+      },
+      "timestamp": {
+        "type": "date"
+      }
+    }
+  }
+}
