@@ -3,25 +3,30 @@
 ## Requirements
 ### Required models
 In order to sucesfuly execute all the examples you need to import 5 NLP models.
-- dslim__bert-base-ner
-  - `eland_import_hub_model --url http://elastic:changeme@localhost:9200 --hub-model-id dslim/bert-base-NER --task-type ner --start`
-- sentence-transformers__clip-vit-b-32-multilingual-v1
-  - `eland_import_hub_model --url http://elastic:elastic@127.0.0.1:9200 --hub-model-id sentence-transformers/clip-ViT-B-32-multilingual-v1 --task-type text_embedding --start`
-- distilbert-base-uncased-finetuned-sst-2-english
-  - `eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id distilbert-base-uncased-finetuned-sst-2-english --task-type text_classification --start`
-- bert-base-uncased
-  - `eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id bert-base-uncased --task-type fill_mask --start`
-- sentence-transformers__msmarco-minilm-l-12-v3
-  - `eland_import_hub_model --url http://elastic:elastic@127.0.0.1:9200 --hub-model-id sentence-transformers/msmarco-MiniLM-L-12-v3 --task-type text_embedding --start`
+- [dslim/bert-base-ner](https://huggingface.co/dslim/bert-base-NER)
+- [sentence-transformers/clip-ViT-B-32-multilingual-v1](https://huggingface.co/sentence-transformers/clip-ViT-B-32-multilingual-v1)
+- [distilbert-base-uncased-finetuned-sst-2-english](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english)
+- [bert-base-uncased](https://huggingface.co/bert-base-uncased)
+- [sentence-transformers/msmarco-MiniLM-L-12-v3](https://huggingface.co/sentence-transformers/msmarco-MiniLM-L-12-v3)
 
 ### Elasticsearch resources
-To run all models in parallel, you will need ~21GB of memory.
+To run all models in parallel, you will need ~21GB of memory, because models are loaded in to memory. 
 
-If your computer does not have enough memory, then you can use less memory, but always run only 1 or 2 models in the same time depending on how much memory you have available.
+If your computer does not have enough memory, then you can configure less memory, and always run only 1 or 2 models 
+in the same time depending on how much memory you have available.
 To change the value of your docker-compose, go to `es-docker/.env` file and change `MEM_LIMIT`.
 
 ## How to
-Before you start the application, you have to setup Elasticsearch cluster with data (indices) and NLP models.
+Before you start the Flask application, you have to setup Elasticsearch cluster with data (indices) and NLP models.
+
+### 0. Setup Python env
+We need to setup Python env to use scripts.
+```bash
+$ cd flask-elastic-nlp
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+$ pip install -r requirements.txt
+```
 
 ### 1. Elasticsearch cluster
 You can use the docker-compose bundled in the repository or use your own cluster or in the ESS cloud.
@@ -37,24 +42,20 @@ Let's load the models in to the application. we use `eland` python client to loa
 
 In the main directory
 ```bash
-cd flask-elastic-nlp
-$ python3 -m venv .venv
-$ source .venv/bin/activate
-$ pip install -r requirements.txt
 # wait until each model is loaded and started. If you do not have enough memory, you will see errors sometimes confusing
 $ eland_import_hub_model --url http://elastic:changeme@localhost:9200 --hub-model-id dslim/bert-base-NER --task-type ner --start
-$ eland_import_hub_model --url http://elastic:elastic@127.0.0.1:9200 --hub-model-id sentence-transformers/clip-ViT-B-32-multilingual-v1 --task-type text_embedding --start
+$ eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/clip-ViT-B-32-multilingual-v1 --task-type text_embedding --start
 $ eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id distilbert-base-uncased-finetuned-sst-2-english --task-type text_classification --start
 $ eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id bert-base-uncased --task-type fill_mask --start
-$ eland_import_hub_model --url http://elastic:elastic@127.0.0.1:9200 --hub-model-id sentence-transformers/msmarco-MiniLM-L-12-v3 --task-type text_embedding --start
+$ eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/msmarco-MiniLM-L-12-v3 --task-type text_embedding --start
 ```
 You can verify that all models are up nd running in Kibana: `Machine Learning -> Trained models`
 ![](models.png)
 
 ### 3. Import data indices
-We need also need the data whhich we import now. In the process the script will download also the datasety from Unsplash.
+We need also the data indices which we use in our flask app. In the process the script will download also the dataset from Unsplash.
 
-We also expect that you installed python environment and requirements as in the step 2 above.
+Make sure that Python environment is set.
 ```bash
 $ cd embeddings
 $ python3 build-datasets.py --es_host "http://127.0.0.1:9200" --es_user "elastic" --es_password "changeme" \                                                                                                                                                             2 ↵
@@ -62,7 +63,7 @@ $ python3 build-datasets.py --es_host "http://127.0.0.1:9200" --es_user "elastic
 ```
 
 ### 4. Run flask app
-We expect that you enabled Python environment and installed all the requirements in the step **2** above
+Make sure that Python environment is set.
 ```bash
 # In the main directory 
 # !!! configure file `.env` with values pointing to your Elasticsearch cluster
