@@ -1,4 +1,5 @@
 # flask-elastic-nlp
+![](similar_image.gif)
 
 ## Requirements
 ### Required models
@@ -15,6 +16,9 @@ To run all models in parallel, you will need ~21GB of memory, because models are
 If your computer does not have enough memory, then you can configure less memory, and always run only 1 or 2 models 
 in the same time depending on how much memory you have available.
 To change the value of your docker-compose, go to `es-docker/.env` file and change `MEM_LIMIT`.
+
+### Python environment
+Python v3.9+
 
 ## How to
 Before you start the Flask application, you have to setup Elasticsearch cluster with data (indices) and NLP models.
