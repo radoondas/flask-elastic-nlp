@@ -170,43 +170,51 @@ def similar_image():
     if not is_index_present(index_name):
         return render_template('similar_image.html', title='Similar image', index_name=index_name, missing_index=True)
 
-    form = InputFileForm()
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            if request.files['file'].filename == '':
-                return render_template('similar_image.html', title='Similar image', form=form, err='No file selected')
+    is_model_up_and_running(INFER_MODEL_IM_SEARCH)
 
-            filename = secure_filename(form.file.data.filename)
+    if app_models.get(INFER_MODEL_IM_SEARCH) == 'started':
+        form = InputFileForm()
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                if request.files['file'].filename == '':
+                    return render_template('similar_image.html', title='Similar image', form=form,
+                                           err='No file selected', model_up=True)
 
-            url_dir = 'static/tmp-uploads/'
-            upload_dir = 'app/' + url_dir
-            upload_dir_exists = os.path.exists(upload_dir)
-            if not upload_dir_exists:
-                # Create a new directory because it does not exist
-                os.makedirs(upload_dir)
+                filename = secure_filename(form.file.data.filename)
 
-            # physical file-dir path
-            file_path = upload_dir + filename
-            # relative file path for URL
-            url_path_file = url_dir + filename
-            # Save the image
-            form.file.data.save(upload_dir + filename)
+                url_dir = 'static/tmp-uploads/'
+                upload_dir = 'app/' + url_dir
+                upload_dir_exists = os.path.exists(upload_dir)
+                if not upload_dir_exists:
+                    # Create a new directory because it does not exist
+                    os.makedirs(upload_dir)
 
-            image = Image.open(file_path)
-            embedding = image_embedding(image, img_model)
+                # physical file-dir path
+                file_path = upload_dir + filename
+                # relative file path for URL
+                url_path_file = url_dir + filename
+                # Save the image
+                form.file.data.save(upload_dir + filename)
 
-            # Execute KN search over the image dataset
-            search_response = knn_search_images(embedding.tolist())
+                image = Image.open(file_path)
+                embedding = image_embedding(image, img_model)
 
-            # Cleanup uploaded file after not needed
-            # if os.path.exists(file_path):
-            #     os.remove(file_path)
+                # Execute KN search over the image dataset
+                search_response = knn_search_images(embedding.tolist())
 
-            return render_template('similar_image.html', title='Similar image', form=form, search_results=search_response.json()['hits']['hits'], original_file=url_path_file)
+                # Cleanup uploaded file after not needed
+                # if os.path.exists(file_path):
+                #     os.remove(file_path)
+
+                return render_template('similar_image.html', title='Similar image', form=form,
+                                       search_results=search_response.json()['hits']['hits'],
+                                       original_file=url_path_file, model_up=True)
+            else:
+                return redirect(url_for('similar_image'))
         else:
-            return redirect(url_for('similar_image'))
+            return render_template('similar_image.html', title='Similar image', form=form, model_up=True)
     else:
-        return render_template('similar_image.html', title='Similar image', form=form)
+        return render_template('similar_image.html', title='Similar image', model_up=False, model_name=INFER_MODEL_IM_SEARCH)
 
 
 @app.errorhandler(413)
