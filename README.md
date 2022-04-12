@@ -18,7 +18,7 @@ in the same time depending on how much memory you have available.
 To change the value of your docker-compose, go to `es-docker/.env` file and change `MEM_LIMIT`.
 
 ### Python environment
-Python v3.9+
+**Python v3.9+**
 
 ## How to
 Before you start the Flask application, you have to setup Elasticsearch cluster with data (indices) and NLP models.
@@ -87,12 +87,12 @@ To run the application in a Docker container you have 2 options.
    ES_PWD='changeit'
     ```
 2. Build the image: `docker build . --tag elastic-nlp/flask-nlp:0.0.1`
-3. Run: `docker run -p 5000:5001 --rm  elastic-nlp/flask-nlp:0.0.1`
+3. Run: `docker run -p 5001:5001 --rm  elastic-nlp/flask-nlp:0.0.1`
 4. Access URL `127.0.0.1:5001`
 
 ### Option 2: Use environment variables
 1. Build the image: `docker build . --tag elastic-nlp/flask-nlp:0.0.1`
-2. Run: `docker run -p 5000:5001 --rm -e ES_HOST='http://localhost:9200' -e ES_USER='elastic' -e ES_PWD='password' elastic-nlp/flask-nlp:0.0.1`
+2. Run: `docker run -p 5001:5001 --rm -e ES_HOST='http://localhost:9200' -e ES_USER='elastic' -e ES_PWD='password' elastic-nlp/flask-nlp:0.0.1`
 3. Access URL `127.0.0.1:5001`
 
 ![](app.png)
