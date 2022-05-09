@@ -1,5 +1,5 @@
 # flask-elastic-nlp
-![](similar_image.gif)
+![](docs/img/similar_image.gif)
 
 ## Important initial thoughts
 This code is just a proof-of-concept to showcase the simplicity of NLP implementation into Elastic stack. 
@@ -51,14 +51,20 @@ Let's load the models into the application. We use the `eland` python client to 
 In the main directory
 ```bash
 # wait until each model is loaded and started. If you do not have enough memory, you will see errors sometimes confusing
-$ eland_import_hub_model --url http://elastic:changeme@localhost:9200 --hub-model-id dslim/bert-base-NER --task-type ner --start
-$ eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/clip-ViT-B-32-multilingual-v1 --task-type text_embedding --start
-$ eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id distilbert-base-uncased-finetuned-sst-2-english --task-type text_classification --start
-$ eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id bert-base-uncased --task-type fill_mask --start
-$ eland_import_hub_model --url http://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/msmarco-MiniLM-L-12-v3 --task-type text_embedding --start
+$ eland_import_hub_model --url https://elastic:changeme@localhost:9200 --hub-model-id dslim/bert-base-NER --task-type ner --start --insecure
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/clip-ViT-B-32-multilingual-v1 --task-type text_embedding --start --insecure
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id distilbert-base-uncased-finetuned-sst-2-english --task-type text_classification --start --insecure
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id bert-base-uncased --task-type fill_mask --start --insecure
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/msmarco-MiniLM-L-12-v3 --task-type text_embedding --start --insecure
 ```
 You can verify that all models are up and running in Kibana: `Machine Learning -> Trained models`
-![](models.png)
+
+![](docs/img/models.png)
+
+If you see in the screen that some models are missing and you see a message. `ML job and trained model synchronization required`, go ahead and click the link to synchronize models.
+
+![](docs/img/model-sync.png)
+
 
 ### 3. Import data indices
 We also need the data indices which we use in our flask app. In the process, the script will also download the dataset from Unsplash.
@@ -99,4 +105,4 @@ To run the application in a Docker container, you have two options.
 2. Run: `docker run -p 5001:5001 --rm -e ES_HOST='http://localhost:9200' -e ES_USER='elastic' -e ES_PWD='password' elastic-nlp/flask-nlp:0.0.1`
 3. Access URL `127.0.0.1:5001`
 
-![](app.png)
+![](docs/img/app.png)
