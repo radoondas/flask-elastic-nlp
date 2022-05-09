@@ -14,16 +14,20 @@ INFER_MODEL_IM_SEARCH = 'sentence-transformers__clip-vit-b-32-multilingual-v1'
 INFER_MODEL_TEXT_CLASS = 'distilbert-base-uncased-finetuned-sst-2-english'
 INFER_MODEL_NER = 'dslim__bert-base-ner'
 INFER_MODEL_FILL_MASK = 'bert-base-uncased'
-INFER_MODEL_LES_MISERABLE = 'sentence-transformers__msmarco-minilm-l-12-v3'
+INFER_MODEL_TEXT_EMBEDDINGS = 'sentence-transformers__msmarco-minilm-l-12-v3'
 
 INDEX_IM_EMBED = 'image-embeddings'
 KNN_SEARCH_IMAGES = "/{}/_knn_search".format(INDEX_IM_EMBED)
 INDEX_LES_MIS = 'les-miserable-embedded'
 KNN_SEARCH_LES_MISERABLE = "/{}/_knn_search".format(INDEX_LES_MIS)
+INDEX_BLOG_SEARCH = 'blogs-embedded'
+KNN_SEARCH_BLOGS = "/{}/_knn_search".format(INDEX_BLOG_SEARCH)
 
 HOST = app.config['ELASTICSEARCH_HOST']
 AUTH = (app.config['ELASTICSEARCH_USER'], app.config['ELASTICSEARCH_PASSWORD'])
 HEADERS = {'Content-Type': 'application/json'}
+
+TLS_VERIFY = app.config['VERIFY_TLS']
 
 app_models = {}
 
@@ -136,20 +140,20 @@ def fill_mask():
 @app.route('/embeddings', methods=['GET', 'POST'])
 def embeddings():
     global app_models
-    is_model_up_and_running(INFER_MODEL_LES_MISERABLE)
+    is_model_up_and_running(INFER_MODEL_TEXT_EMBEDDINGS)
 
     index_name = INDEX_LES_MIS
     if not is_index_present(index_name):
         return render_template('embeddings.html', title='Embeddings', model_up=False,
                                index_name=index_name, missing_index=True)
 
-    if app_models.get(INFER_MODEL_LES_MISERABLE) == 'started':
+    if app_models.get(INFER_MODEL_TEXT_EMBEDDINGS) == 'started':
         form = SearchForm()
         # Check for  method
         if request.method == 'POST':
             if form.validate_on_submit():
-                embeddings_response = sentence_embedding_les_miserable(form.searchbox.data)
-                search_response = knn_search_embeddings(embeddings_response)
+                embeddings_response = sentence_embedding_query(form.searchbox.data)
+                search_response = knn_les_miserable_embeddings(embeddings_response)
 
                 return render_template('embeddings.html', title='Embeddings', form=form,
                                        search_results=search_response.json()['hits']['hits'],
@@ -161,7 +165,7 @@ def embeddings():
             return render_template('embeddings.html', title='Embeddings', form=form, model_up=True, missing_index=False)
     else:
         return render_template('embeddings.html', title='Embeddings', model_up=False,
-                               model_name=INFER_MODEL_LES_MISERABLE, missing_index=False)
+                               model_name=INFER_MODEL_TEXT_EMBEDDINGS, missing_index=False)
 
 
 @app.route('/similar_image', methods=['GET', 'POST'])
@@ -217,6 +221,37 @@ def similar_image():
         return render_template('similar_image.html', title='Similar image', model_up=False, model_name=INFER_MODEL_IM_SEARCH)
 
 
+@app.route('/blog_search', methods=['GET', 'POST'])
+def blog_search():
+    global app_models
+    is_model_up_and_running(INFER_MODEL_TEXT_EMBEDDINGS)
+
+    index_name = INDEX_BLOG_SEARCH
+    if not is_index_present(index_name):
+        return render_template('blog_search.html', title='Blog search', model_up=False,
+                               index_name=index_name, missing_index=True)
+
+    if app_models.get(INFER_MODEL_TEXT_EMBEDDINGS) == 'started':
+        form = SearchForm()
+        # Check for  method
+        if request.method == 'POST':
+            if form.validate_on_submit():
+                embeddings_response = sentence_embedding_query(form.searchbox.data)
+                search_response = knn_blogs_embeddings(embeddings_response)
+
+                return render_template('blog_search.html', title='Blog search', form=form,
+                                       search_results=search_response.json()['hits']['hits'],
+                                       query=form.searchbox.data, model_up=True, missing_index=False)
+
+            else:
+                return redirect(url_for('blog_search'))
+        else:  # GET
+            return render_template('blog_search.html', title='Blog Search', form=form, model_up=True, missing_index=False)
+    else:
+        return render_template('blog_search.html', title='Blog search', model_up=False,
+                               model_name=INFER_MODEL_TEXT_EMBEDDINGS, missing_index=False)
+
+
 @app.errorhandler(413)
 @app.errorhandler(RequestEntityTooLarge)
 def app_handle_413(e):
@@ -227,7 +262,7 @@ def app_handle_413(e):
 def sentence_embedding(query: str):
     query = '{ "docs" : [ {"text_field": "' + query + '"} ] }'
     response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_IM_SEARCH), auth=AUTH,
-                             headers=HEADERS, data=query)
+                             headers=HEADERS, data=query, verify=TLS_VERIFY)
     return response.json()['predicted_value']
 
 
@@ -243,7 +278,7 @@ def knn_search_images(dense_vector: list):
              '"_source": false'
              '}'
              )
-    return requests.get(HOST + KNN_SEARCH_IMAGES, auth=AUTH, headers=HEADERS, data=query)
+    return requests.get(HOST + KNN_SEARCH_IMAGES, auth=AUTH, headers=HEADERS, data=query, verify=TLS_VERIFY)
 
 
 def print_hits(search_response):
@@ -261,31 +296,32 @@ def print_hits(search_response):
 def text_classification(query: str):
     query = '{ "docs": { "text_field": "' + query + '"} }'
     response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_TEXT_CLASS), auth=AUTH,
-                             headers=HEADERS, data=query)
+                             headers=HEADERS, data=query, verify=TLS_VERIFY)
     return response.json()
 
 
 def ner_nlp_query(query: str):
     query = '{ "docs": { "text_field": "' + query + '"} }'
-    response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_NER), auth=AUTH, headers=HEADERS, data=query)
+    response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_NER), auth=AUTH, headers=HEADERS, data=query,
+                             verify=TLS_VERIFY)
     return response.json()
 
 
 def fill_mask_query(query: str):
     query = '{ "docs": { "text_field": "' + query + '"} }'
     response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_FILL_MASK), auth=AUTH,
-                             headers=HEADERS, data=query)
+                             headers=HEADERS, data=query, verify=TLS_VERIFY)
     return response.json()
 
 
-def sentence_embedding_les_miserable(query: str):
+def sentence_embedding_query(query: str):
     query = '{ "docs" : [ {"text_field": "' + query + '"} ] }'
-    response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_LES_MISERABLE), auth=AUTH,
-                             headers=HEADERS, data=query)
+    response = requests.post(HOST + INFER_ENDPOINT.format(model=INFER_MODEL_TEXT_EMBEDDINGS), auth=AUTH,
+                             headers=HEADERS, data=query, verify=TLS_VERIFY)
     return response.json()['predicted_value']
 
 
-def knn_search_embeddings(dense_vector: list):
+def knn_les_miserable_embeddings(dense_vector: list):
     query = ('{  "_source": ["paragraph", "line"], '
              '"knn" : {'
              '"field": "ml.inference.predicted_value",'
@@ -294,7 +330,7 @@ def knn_search_embeddings(dense_vector: list):
              '"query_vector" : ' + str(dense_vector) + '}'
              '}'
              )
-    return requests.get(HOST + KNN_SEARCH_LES_MISERABLE, auth=AUTH, headers=HEADERS, data=query)
+    return requests.get(HOST + KNN_SEARCH_LES_MISERABLE, auth=AUTH, headers=HEADERS, data=query, verify=TLS_VERIFY)
 
 
 def image_embedding(image, model):
@@ -305,7 +341,7 @@ def is_model_up_and_running(model: str):
     global app_models
 
     endpoint = "/_ml/trained_models/{}/_stats".format(model)
-    r = requests.get(HOST + endpoint, auth=AUTH, headers=HEADERS)
+    r = requests.get(HOST + endpoint, auth=AUTH, headers=HEADERS, verify=TLS_VERIFY)
     json_response = r.json()
 
     if r.status_code == 200:
@@ -317,8 +353,20 @@ def is_model_up_and_running(model: str):
         app_models[model] = 'na'
 
 
+def knn_blogs_embeddings(dense_vector: list):
+    query = ('{  "_source": ["body_content_window", "id", "title", "url_path", "url"], '
+             '"knn" : {'
+             '"field": "ml.inference.predicted_value",'
+             '"k": 10,'
+             '"num_candidates": 30,'
+             '"query_vector" : ' + str(dense_vector) + '}'
+             '}'
+             )
+    return requests.get(HOST + KNN_SEARCH_BLOGS, auth=AUTH, headers=HEADERS, data=query, verify=TLS_VERIFY)
+
+
 def is_index_present(index_name: str):
-    r = requests.head(HOST + '/' + index_name, auth=AUTH)
+    r = requests.head(HOST + '/' + index_name, auth=AUTH, verify=TLS_VERIFY)
     if r.status_code == 200:
         return True
     else:

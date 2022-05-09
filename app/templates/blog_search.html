@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1 class="title">Blog search</h1>
+{% if not missing_index %}
+{% if model_up %}
+<section class="section">
+    <div class="box has-background-warning-light">
+        <p>
+            <b>Try one of the following examples:</b>
+            <ul>
+                <li>when did we release free ssl</li>
+                <li>what version did we officially support ARM processors</li>
+                <li>when did we release Outlier Detection machine Learning job</li>
+            </ul>
+        </p>
+    </div>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <p>
+        <div class="field">
+            {{ form.searchbox.label(class_="label") }}
+            {{ form.searchbox(size=32, class_="input is-info") }}
+        </div>
+        </p>
+
+        <p>{{ form.submit(class_="button is-info") }}</p>
+    </form>
+</section>
+
+{% if search_results %}
+
+<section class="section">
+    <div class="container">
+        Search Query: {{ query }}
+        <hr>
+        <table class="table is-striped is-fullwidth">
+            <thead>
+            <tr>
+                <th><abbr title="Title">Title</abbr></th>
+                <th><abbr title="Url path">Url path</abbr></th>
+                <th><abbr title="Url">Url</abbr></th>
+                <th><abbr title="Content">Content</abbr></th>
+            </tr>
+            </thead>
+            {% for document in search_results %}
+
+            <tr>
+                <td>
+                    {{ document._source.title }}
+                </td>
+                <td>
+                    {{ document._source.url_path }}
+                </td>
+                <td>
+                    <a href="{{ document._source.url }}" target="_blank">{{ document._source.url }}</a>
+                </td>
+                <td>
+                    {{ document._source.body_content_window }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</section>
+
+{% endif %}
+
+{% else %}
+<div class="box has-background-danger-light">
+    <p>
+        <strong> The NLP model ({{ model_name }}) required for this task is unavailable in Elasticsearch cluster. </br>Please make sure
+            the model is up and running.</strong>
+    </p>
+</div>
+
+{% endif %}
+
+{% else %}
+<div class="box has-background-danger-light">
+    <p>
+        <strong> The Index ({{ index_name }}) required for this task is unavailable in Elasticsearch cluster. </br>Please make sure
+            the index is available.</strong>
+    </p>
+</div>
+{% endif %}
+{% endblock %}
