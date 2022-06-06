@@ -12,7 +12,7 @@ elasticsearch~=8.2.0
 Pillow~=9.0.1
 tqdm~=4.62.3
 # eland
-eland~=8.1.0
+eland~=8.2.0
 torch~=1.10.2
 torchvision~=0.11.3
 transformers~=4.16.2

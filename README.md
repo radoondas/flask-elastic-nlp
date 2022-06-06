@@ -91,7 +91,7 @@ To run the application in a Docker container, you have two options.
 
 ### Option 1: Configure .env file
 1. Configure correct values in `.env` file with access to Elasticsearch cluster
-   ```
+   ```toml
    ES_HOST='http://localhost:9200'
    ES_USER='elastic'
    ES_PWD='changeit'
