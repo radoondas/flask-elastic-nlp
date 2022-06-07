@@ -1,0 +1,15 @@
+{
+  "embed-blogs": {
+    "description": "Blogs embed pipeline",
+    "processors": [
+      {
+        "inference": {
+          "model_id": "sentence-transformers__msmarco-minilm-l-12-v3",
+          "field_map": {
+            "body_content_window": "text_field"
+          }
+        }
+      }
+    ]
+  }
+}

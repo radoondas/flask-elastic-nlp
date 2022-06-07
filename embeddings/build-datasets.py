@@ -23,6 +23,9 @@ LES_MISERABLE_FOLDER = "les-miserable/"
 LES_MISERABLE_FILE = "les-miserable-embedded.json.zip"
 
 BLOGS_FOLDER = "blogs/"
+BLOGS_FILE = "blogs-embedded.json.zip"
+
+es = Elasticsearch(hosts='https://1270.0.0.1:9200')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--es_host', dest='es_host', required=False, default="https://127.0.0.1:9200",
@@ -42,10 +45,37 @@ parser.add_argument('--timeout', dest='timeout', required=False, default=120, ty
 parser.add_argument('--delete_existing', dest='delete_existing', action='store_true', default=True,
                     help="Delete existing indices if they are present in the cluster. Default: True")
 
+args = parser.parse_args()
+
 
 def main():
-    args = parser.parse_args()
-    global UNSPLASH_FILE
+    global args
+    global es
+
+    # Initialize the client
+    es = Elasticsearch(hosts=[args.es_host], basic_auth=(args.es_user, args.es_password),
+                       verify_certs=args.verify_certs, request_timeout=args.timeout)
+
+    # Import images dataset
+    import_image_dataset()
+
+    # Import les miserable dataset
+    import_les_miserable_dataset()
+
+    # Import blogs dataset
+    import_blogs_dataset()
+
+
+def gen_rows(df):
+    for doc in df.to_dict(orient='records'):
+        yield doc
+
+
+def import_image_dataset():
+    print('Importing image dataset')
+    global es, args
+    global UNSPLASH_FILE, UNSPLASH_FOLDER
+
     # Create a new directory because it does not exist
     if not os.path.exists(UNSPLASH_FOLDER):
         os.makedirs(UNSPLASH_FOLDER)
@@ -88,10 +118,6 @@ def main():
                          on='photo_id',
                          how='inner')
 
-    es = Elasticsearch(hosts=[args.es_host], basic_auth=(args.es_user, args.es_password),
-                       verify_certs=args.verify_certs, request_timeout=args.timeout)
-
-    ############ IMAGE EMBEDDINGS
     # index name to index data into
     index = "image-embeddings"
     with open(EMBEDDINGS_FOLDER + "image-embeddings-mappings.json", "r") as config_file:
@@ -124,13 +150,19 @@ def main():
     print('Indexed %s image embeddings documents' % str(count), flush=True)
     sys.stdout.flush()
 
-    ############ LES MISERABLE EMBEDDINGS
+
+def import_les_miserable_dataset():
+    print('Importing Mes miserable dataset')
+    global es, args
+    global LES_MISERABLE_FOLDER, LES_MISERABLE_FILE
+
     file_exists = exists(LES_MISERABLE_FOLDER + LES_MISERABLE_FILE)
     if not file_exists:
-        print("Missing file " + LES_MISERABLE_FILE + ". Skipping. Need fix.")
+        print("Missing file " + LES_MISERABLE_FILE + ". Skipping. Needs fix.")
     else:
         # Unzip and upload book paragraph embeddings
         with zipfile.ZipFile(LES_MISERABLE_FOLDER + LES_MISERABLE_FILE, 'r') as zip_ref:
+            print('Extracting file ', LES_MISERABLE_FOLDER + LES_MISERABLE_FILE, '.')
             zip_ref.extractall(LES_MISERABLE_FOLDER)
 
         df_les_miserable_embeddings = pd.read_json(LES_MISERABLE_FOLDER + 'les-miserable-embedded.json', lines=True)
@@ -145,7 +177,8 @@ def main():
                     es.indices.delete(index=index_lm, ignore=[400, 404])
 
             print("Creating index %s" % index_lm)
-            es.indices.create(index=index_lm, mappings=config_lm["mappings"], settings=config_lm["settings"], ignore=[400, 404])
+            es.indices.create(index=index_lm, mappings=config_lm["mappings"], settings=config_lm["settings"],
+                              ignore=[400, 404])
 
         count = 0
         for success, info in parallel_bulk(
@@ -167,38 +200,22 @@ def main():
         print('Indexed %s les-miserable embeddings documents' % str(count), flush=True)
         sys.stdout.flush()
 
-    ############ BLOGS EMBEDDINGS
-    file_list_zip = ["blogs-embedded-1.json.zip",
-                     "blogs-embedded-2.json.zip",
-                     "blogs-embedded-3.json.zip",
-                     "blogs-embedded-4.json.zip"]
-    file_list_json = ["blogs-embedded-1.json",
-                      "blogs-embedded-2.json",
-                      "blogs-embedded-3.json",
-                      "blogs-embedded-4.json"]
-    missing_files = []
 
-    # Unzip all 4 files
-    for zip_file in file_list_zip:
-        file_exists = exists(BLOGS_FOLDER + zip_file)
-        if not file_exists:
-            print("Missing file " + zip_file + ". Investigate!")
-            missing_files.append(zip_file)
-        else:
-            with zipfile.ZipFile(BLOGS_FOLDER + zip_file, 'r') as zip_ref:
-                zip_ref.extractall(BLOGS_FOLDER)
-    # Check if files are missing
-    if len(missing_files) > 0:
-        print("Missing " + len(missing_files) + " blog source files. The import might be incomplete. Investigate.")
+def import_blogs_dataset():
+    print('Importing blogs dataset')
+    global es, args
+    global BLOGS_FOLDER, BLOGS_FILE
 
-    # We have at least 1 file unzipped
-    if len(missing_files) < 4:
-        dfs = []  # an empty list to store the data frames
-        for json_file in file_list_json:
-            data = pd.read_json(BLOGS_FOLDER + '/' + json_file, lines=True) # read data frame from json file
-            dfs.append(data)  # append the data frame to the list
-        # Concat all the data
-        df_blogs_embeddings = pd.concat(dfs, ignore_index=True)
+    file_exists = exists(BLOGS_FOLDER + BLOGS_FILE)
+    if not file_exists:
+        print("Missing file " + BLOGS_FILE + ". Skipping. Needs fix.")
+    else:
+        # Unzip index file
+        with zipfile.ZipFile(BLOGS_FOLDER + BLOGS_FILE, 'r') as zip_ref:
+            print('Extracting file ', BLOGS_FOLDER + BLOGS_FILE, '.')
+            zip_ref.extractall(BLOGS_FOLDER)
+
+        df_blogs_embeddings = pd.read_json(BLOGS_FOLDER + 'blogs-embedded.json', lines=True)
 
         INDEX_BLOG = 'blogs-embedded'
         # index_lm = INDEX_BLOG
@@ -235,11 +252,6 @@ def main():
 
     print("Done!\n")
     sys.stdout.flush()
-
-
-def gen_rows(df):
-    for doc in df.to_dict(orient='records'):
-        yield doc
 
 
 if __name__ == '__main__':
