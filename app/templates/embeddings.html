@@ -49,10 +49,10 @@
                     {{ document._score }}
                 </td>
                 <td>
-                    {{ document._source.line }}
+                    {{ document.fields.line[0] }}
                 </td>
                  <td>
-                    {{ document._source.paragraph }}
+                    {{ document.fields.paragraph[0] }}
                 </td>
             </tr>
             {% endfor %}

@@ -47,16 +47,16 @@
 
             <tr>
                 <td>
-                    {{ document._source.title }}
+                    {{ document.fields.title[0] }}
                 </td>
                 <td>
-                    {{ document._source.url_path }}
+                    {{ document.fields.url_path[0] }}
                 </td>
                 <td>
-                    <a href="{{ document._source.url }}" target="_blank">{{ document._source.url }}</a>
+                    <a href="{{ document.fields.url[0] }}" target="_blank">{{ document.fields.url[0] }}</a>
                 </td>
                 <td>
-                    {{ document._source.body_content_window }}
+                    {{ document.fields.body_content_window[0] }}
                 </td>
             </tr>
             {% endfor %}
