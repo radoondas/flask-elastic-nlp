@@ -9,20 +9,41 @@
     <div class="box has-background-warning-light">
         <p>
             <b>Try one of the following examples:</b>
-            <ul>
-                <li>How to find anomalies in location data?</li>
-            </ul>
+        <ul>
+            <li>How to find anomalies in location data?</li>
+        </ul>
         </p>
     </div>
     <form action="" method="post" novalidate>
         {{ form.hidden_tag() }}
         <p>
-        <div class="field">
-            {{ form.searchbox.label(class_="label") }}
-            {{ form.searchbox(size=32, class_="input is-info") }}
+        <div class="container">
+            <div class="columns">
+                <div class="column">
+                    <p>
+                    <div class="field">
+                        {{ form.searchbox.label(class_="label") }}
+                        {{ form.searchbox(size=32, class_="input is-info") }}
+                    </div>
+                    </p>
+                </div>
+                <div class="column is-one-fifth">
+                    <p>
+                    <div class="field">
+                        {{ form.searchboxAuthor.label(class_="label") }}
+                        {{ form.searchboxAuthor(size=1, class_="input is-info") }}
+                    </div>
+                    </p>
+                </div>
+            </div>
+            <p>
+                {{ form.searchboxBlogWindow.label(class_="label") }}
+                <div class="field">
+                {{ form.searchboxBlogWindow(size=50, class_="textarea is-info") }}
+            </div>
+            </p>
         </div>
         </p>
-
         <p>{{ form.submit(class_="button is-info") }}</p>
     </form>
 </section>
@@ -50,7 +71,7 @@
                 </td>
                 <td>
                     {% for author in document.fields.byline %}
-                        {{ author }}</br> </br>
+                    {{ author }}</br> </br>
                     {% endfor %}
                 </td>
                 <td>
@@ -65,6 +86,20 @@
     </div>
 </section>
 
+{% endif %}
+
+{% if qa_results %}
+<section class="section">
+    <div class="container">
+        Search Query: {{ query }}
+        <hr>
+        Answer: <strong>{{ qa_results.predicted_value }}</strong></br>
+        Start offset: <strong>{{ qa_results.start_offset }}</strong></br>
+        End offset: <strong>{{ qa_results.end_offset }}</strong></br>
+        Prediction probability: <strong>{{ qa_results.prediction_probability }}</strong></br>
+
+    </div>
+</section>
 {% endif %}
 
 {% else %}

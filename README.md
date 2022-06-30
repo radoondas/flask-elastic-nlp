@@ -13,6 +13,7 @@ In order to sucesfuly execute all the examples you need to import 5 NLP models.
 - [distilbert-base-uncased-finetuned-sst-2-english](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english)
 - [bert-base-uncased](https://huggingface.co/bert-base-uncased)
 - [sentence-transformers/msmarco-MiniLM-L-12-v3](https://huggingface.co/sentence-transformers/msmarco-MiniLM-L-12-v3)
+- [deepset/tinyroberta-squad2](https://huggingface.co/deepset/tinyroberta-squad2)
 
 ### Elasticsearch resources
 To run all models in parallel, you will need ~21GB of memory because models are loaded into memory. 
@@ -56,6 +57,7 @@ $ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-mod
 $ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id distilbert-base-uncased-finetuned-sst-2-english --task-type text_classification --start --insecure
 $ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id bert-base-uncased --task-type fill_mask --start --insecure
 $ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/msmarco-MiniLM-L-12-v3 --task-type text_embedding --start --insecure
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id deepset/tinyroberta-squad2 --task-type question_answering --start --insecure
 ```
 You can verify that all models are up and running in Kibana: `Machine Learning -> Trained models`
 

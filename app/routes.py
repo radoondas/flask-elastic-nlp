@@ -1,6 +1,7 @@
 from app import app, img_model, es
 from flask import render_template, redirect, url_for, request
 from app.searchForm import SearchForm
+from app.searchBlogsForm import SearchBlogsForm
 from app.inputFileForm import InputFileForm
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -15,6 +16,7 @@ INFER_MODEL_TEXT_CLASS = 'distilbert-base-uncased-finetuned-sst-2-english'
 INFER_MODEL_NER = 'dslim__bert-base-ner'
 INFER_MODEL_FILL_MASK = 'bert-base-uncased'
 INFER_MODEL_TEXT_EMBEDDINGS = 'sentence-transformers__msmarco-minilm-l-12-v3'
+INFER_MODEL_Q_AND_A = 'deepset__tinyroberta-squad2'
 
 INDEX_IM_EMBED = 'image-embeddings'
 INDEX_LES_MIS = 'les-miserable-embedded'
@@ -230,17 +232,24 @@ def blog_search():
                                index_name=index_name, missing_index=True)
 
     if app_models.get(INFER_MODEL_TEXT_EMBEDDINGS) == 'started':
-        form = SearchForm()
+        form = SearchBlogsForm()
         # Check for  method
         if request.method == 'POST':
             if form.validate_on_submit():
-                embeddings_response = infer_trained_model(form.searchbox.data, INFER_MODEL_TEXT_EMBEDDINGS)
-                search_response = knn_blogs_embeddings(embeddings_response['predicted_value'])
+                if len(form.searchboxBlogWindow.data) == 0:
+                    print()
+                    embeddings_response = infer_trained_model(form.searchbox.data, INFER_MODEL_TEXT_EMBEDDINGS)
+                    search_response = knn_blogs_embeddings(embeddings_response['predicted_value'],
+                                                           form.searchboxAuthor.data)
 
-                return render_template('blog_search.html', title='Blog search', form=form,
-                                       search_results=search_response['hits']['hits'],
-                                       query=form.searchbox.data, model_up=True, missing_index=False)
-
+                    return render_template('blog_search.html', title='Blog search', form=form,
+                                           search_results=search_response['hits']['hits'],
+                                           query=form.searchbox.data, model_up=True, missing_index=False)
+                else:
+                    search_response = q_and_a(question=form.searchbox.data, full_text=form.searchboxBlogWindow.data)
+                    return render_template('blog_search.html', title='Blog search', form=form,
+                                           qa_results=search_response.body,
+                                           query=form.searchbox.data, model_up=True, missing_index=False)
             else:
                 return redirect(url_for('blog_search'))
         else:  # GET
@@ -338,7 +347,7 @@ def is_model_up_and_running(model: str):
         app_models[model] = 'na'
 
 
-def knn_blogs_embeddings(dense_vector: list):
+def knn_blogs_embeddings(dense_vector: list, filter: str):
     source_fields = ["body_content_window", "id", "title", "byline", "url"]
     query = {
         "field": "text_embedding.predicted_value",
@@ -347,10 +356,37 @@ def knn_blogs_embeddings(dense_vector: list):
         "num_candidates": 30
     }
 
-    response = es.knn_search(
-        index=INDEX_BLOG_SEARCH,
-        fields=source_fields,
-        knn=query,
-        source=False)
+    if len(filter) > 0:
+        print('ss')
+        fltr = {
+            "term": {
+              "byline.keyword": filter
+            }
+        }
+        response = es.knn_search(
+            index=INDEX_BLOG_SEARCH,
+            fields=source_fields,
+            knn=query,
+            filter=fltr,
+            source=False)
+    else:
+        response = es.knn_search(
+            index=INDEX_BLOG_SEARCH,
+            fields=source_fields,
+            knn=query,
+            source=False)
 
+    return response
+
+
+def q_and_a(question: str, full_text: str):
+    cfg = {
+        "question_answering": {
+            "question": question,
+            "max_answer_length": 30
+        }
+    }
+    response = es.ml.infer_trained_model_deployment(model_id=INFER_MODEL_Q_AND_A,
+                                                    docs=[{"text_field": full_text}],
+                                                    inference_config=cfg)
     return response
