@@ -5,6 +5,7 @@
       {
         "inference": {
           "model_id": "sentence-transformers__msmarco-minilm-l-12-v3",
+          "target_field": "text_embedding",
           "field_map": {
             "body_content_window": "text_field"
           }

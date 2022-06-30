@@ -18,7 +18,7 @@ INFER_MODEL_TEXT_EMBEDDINGS = 'sentence-transformers__msmarco-minilm-l-12-v3'
 
 INDEX_IM_EMBED = 'image-embeddings'
 INDEX_LES_MIS = 'les-miserable-embedded'
-INDEX_BLOG_SEARCH = 'blogs-embedded'
+INDEX_BLOG_SEARCH = 'blogs-with-embeddings'
 
 HOST = app.config['ELASTICSEARCH_HOST']
 AUTH = (app.config['ELASTICSEARCH_USER'], app.config['ELASTICSEARCH_PASSWORD'])
@@ -339,9 +339,9 @@ def is_model_up_and_running(model: str):
 
 
 def knn_blogs_embeddings(dense_vector: list):
-    source_fields = ["body_content_window", "id", "title", "url_path", "url"]
+    source_fields = ["body_content_window", "id", "title", "byline", "url"]
     query = {
-        "field": "ml.inference.predicted_value",
+        "field": "text_embedding.predicted_value",
         "query_vector": dense_vector,
         "k": 10,
         "num_candidates": 30

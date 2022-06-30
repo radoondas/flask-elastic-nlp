@@ -8,4 +8,4 @@ es-docker
 *.gif
 *.png
 **/__pycache__
-app/static/*
+skeleton-app

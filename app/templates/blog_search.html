@@ -10,8 +10,7 @@
         <p>
             <b>Try one of the following examples:</b>
             <ul>
-                <li>when did we release free ssl</li>
-                <li>when did we release Outlier Detection machine Learning job</li>
+                <li>How to find anomalies in location data?</li>
             </ul>
         </p>
     </div>
@@ -38,7 +37,7 @@
             <thead>
             <tr>
                 <th><abbr title="Title">Title</abbr></th>
-                <th><abbr title="Url path">Url path</abbr></th>
+                <th><abbr title="Author">Author</abbr></th>
                 <th><abbr title="Url">Url</abbr></th>
                 <th><abbr title="Content">Content</abbr></th>
             </tr>
@@ -50,7 +49,9 @@
                     {{ document.fields.title[0] }}
                 </td>
                 <td>
-                    {{ document.fields.url_path[0] }}
+                    {% for author in document.fields.byline %}
+                        {{ author }}</br> </br>
+                    {% endfor %}
                 </td>
                 <td>
                     <a href="{{ document.fields.url[0] }}" target="_blank">{{ document.fields.url[0] }}</a>

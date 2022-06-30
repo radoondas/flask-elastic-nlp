@@ -23,7 +23,7 @@ LES_MISERABLE_FOLDER = "les-miserable/"
 LES_MISERABLE_FILE = "les-miserable-embedded.json.zip"
 
 BLOGS_FOLDER = "blogs/"
-BLOGS_FILE = "blogs-embedded.json.zip"
+BLOGS_FILE = "blogs-with-embeddings.json.zip"
 
 es = Elasticsearch(hosts='https://1270.0.0.1:9200')
 
@@ -53,6 +53,7 @@ def main():
     global es
 
     # Initialize the client
+    # TODO: args.verify_certs does not work correctly when read from the arguments
     es = Elasticsearch(hosts=[args.es_host], basic_auth=(args.es_user, args.es_password),
                        verify_certs=args.verify_certs, request_timeout=args.timeout)
 
@@ -215,11 +216,11 @@ def import_blogs_dataset():
             print('Extracting file ', BLOGS_FOLDER + BLOGS_FILE, '.')
             zip_ref.extractall(BLOGS_FOLDER)
 
-        df_blogs_embeddings = pd.read_json(BLOGS_FOLDER + 'blogs-embedded.json', lines=True)
+        df_blogs_embeddings = pd.read_json(BLOGS_FOLDER + 'blogs-with-embeddings.json', lines=True)
 
-        INDEX_BLOG = 'blogs-embedded'
+        INDEX_BLOG = 'blogs-with-embeddings'
         # index_lm = INDEX_BLOG
-        with open(BLOGS_FOLDER + "blogs-embedded-mappings.json", "r") as config_file_blg:
+        with open(BLOGS_FOLDER + "blogs-with-embeddings-mappings.json", "r") as config_file_blg:
             config_blg = json.loads(config_file_blg.read())
             if args.delete_existing:
                 if es.indices.exists(index=INDEX_BLOG):
