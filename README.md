@@ -6,6 +6,9 @@ This code is just a proof-of-concept to showcase the simplicity of NLP implement
 The code as-is is not meant to be deployed in the production environment.
 
 ## Requirements
+### Elasticsearch version
+v8.3.0+
+
 ### Required models
 In order to sucesfuly execute all the examples you need to import 5 NLP models.
 - [dslim/bert-base-ner](https://huggingface.co/dslim/bert-base-NER)

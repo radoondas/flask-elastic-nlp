@@ -4,7 +4,7 @@
 
 <h1 class="title">Blog search</h1>
 {% if not missing_index %}
-{% if model_up %}
+{% if te_model_up %}
 <section class="section">
     <div class="box has-background-warning-light">
         <p>
@@ -36,12 +36,19 @@
                     </p>
                 </div>
             </div>
+        {% if qa_model_up %}
             <p>
                 {{ form.searchboxBlogWindow.label(class_="label") }}
                 <div class="field">
                 {{ form.searchboxBlogWindow(size=50, class_="textarea is-info") }}
             </div>
             </p>
+        {% else %}
+        <p>
+            Note: NLP search only. Model for Q&A is not available.
+        </p>
+        <br>
+        {% endif %}
         </div>
         </p>
         <p>{{ form.submit(class_="button is-info") }}</p>
