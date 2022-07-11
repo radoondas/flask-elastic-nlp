@@ -20,7 +20,7 @@ INFER_MODEL_Q_AND_A = 'deepset__tinyroberta-squad2'
 
 INDEX_IM_EMBED = 'image-embeddings'
 INDEX_LES_MIS = 'les-miserable-embedded'
-INDEX_BLOG_SEARCH = 'blogs-with-embeddings'
+INDEX_BLOG_SEARCH = 'blogs'
 
 HOST = app.config['ELASTICSEARCH_HOST']
 AUTH = (app.config['ELASTICSEARCH_USER'], app.config['ELASTICSEARCH_PASSWORD'])

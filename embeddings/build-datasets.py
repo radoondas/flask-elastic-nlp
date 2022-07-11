@@ -34,7 +34,7 @@ parser.add_argument('--es_user', dest='es_user', required=False, default='elasti
                     help="Elasticsearch username. Default: elastic")
 parser.add_argument('--es_password', dest='es_password', required=False, default='changeme',
                     help="Elasticsearch password. Default: changeme")
-parser.add_argument('--verify_certs', dest='verify_certs', required=False, default=False,
+parser.add_argument('--verify_certs', dest='verify_certs', required=False, action=argparse.BooleanOptionalAction,
                     help="Verify certificates. Default: False")
 parser.add_argument('--thread_count', dest='thread_count', required=False, default=4, type=int,
                     help="Number of indexing threads. Default: 4")
@@ -42,7 +42,7 @@ parser.add_argument('--chunk_size', dest='chunk_size', required=False, default=1
                     help="")
 parser.add_argument('--timeout', dest='timeout', required=False, default=120, type=int,
                     help="Request timeout in seconds. Default: 120")
-parser.add_argument('--delete_existing', dest='delete_existing', action='store_true', default=True,
+parser.add_argument('--delete_existing', dest='delete_existing', required=False, action=argparse.BooleanOptionalAction,
                     help="Delete existing indices if they are present in the cluster. Default: True")
 
 args = parser.parse_args()
@@ -108,10 +108,13 @@ def import_image_dataset():
     df_unsplash['photographer_first_name'].fillna('', inplace=True)
     df_unsplash['photographer_last_name'].fillna('', inplace=True)
     df_unsplash['photographer_username'].fillna('', inplace=True)
+    df_unsplash['exif_camera_make'].fillna('', inplace=True)
+    df_unsplash['exif_camera_model'].fillna('', inplace=True)
+    df_unsplash['exif_iso'].fillna(0, inplace=True)
 
     df_unsplash_subset = df_unsplash[
         ['photo_id', 'photo_url', 'photo_image_url', 'photo_description', 'ai_description', 'photographer_first_name',
-         'photographer_last_name', 'photographer_username']]
+         'photographer_last_name', 'photographer_username', 'exif_camera_make', 'exif_camera_model', 'exif_iso']]
     df_embeddings = pd.read_json(EMBEDDINGS_FOLDER + 'image-embeddings.json', lines=True)
 
     # https://www.geeksforgeeks.org/how-to-merge-two-csv-files-by-specific-column-using-pandas-in-python/
@@ -218,7 +221,7 @@ def import_blogs_dataset():
 
         df_blogs_embeddings = pd.read_json(BLOGS_FOLDER + 'blogs-with-embeddings.json', lines=True)
 
-        INDEX_BLOG = 'blogs-with-embeddings'
+        INDEX_BLOG = 'blogs'
         # index_lm = INDEX_BLOG
         with open(BLOGS_FOLDER + "blogs-with-embeddings-mappings.json", "r") as config_file_blg:
             config_blg = json.loads(config_file_blg.read())

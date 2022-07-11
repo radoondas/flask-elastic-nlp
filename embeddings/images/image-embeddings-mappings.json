@@ -34,6 +34,15 @@
       },
       "photographer_username": {
         "type": "keyword"
+      },
+      "exif_camera_make": {
+        "type": "keyword"
+      },
+      "exif_camera_model": {
+        "type": "keyword"
+      },
+      "exif_iso": {
+        "type": "integer"
       }
     }
   }
