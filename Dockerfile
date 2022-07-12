@@ -1,4 +1,4 @@
-FROM python:3.9.12
+FROM python:3.9.13
 
 RUN apt-get update && rm -rf /var/lib/apt/lists/*
 
