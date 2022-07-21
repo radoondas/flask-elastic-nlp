@@ -5,7 +5,8 @@ from app.searchBlogsForm import SearchBlogsForm
 from app.inputFileForm import InputFileForm
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
-import requests
+import elasticsearch
+# import requests
 import os
 from PIL import Image
 
@@ -336,19 +337,13 @@ def image_embedding(image, model):
 def is_model_up_and_running(model: str):
     global app_models
 
-    # TODO: change to ES client library
-    # res = es.ml.get_trained_models_stats(model_id=model)
-
-    endpoint = "/_ml/trained_models/{}/_stats".format(model)
-    r = requests.get(HOST + endpoint, auth=AUTH, headers=HEADERS, verify=TLS_VERIFY)
-    json_response = r.json()
-
-    if r.status_code == 200:
-        if "deployment_stats" in json_response['trained_model_stats'][0]:
-            app_models[model] = json_response['trained_model_stats'][0]['deployment_stats']['state']
+    try:
+        rsp = es.ml.get_trained_models_stats(model_id=model)
+        if "deployment_stats" in rsp['trained_model_stats'][0]:
+            app_models[model] = rsp['trained_model_stats'][0]['deployment_stats']['state']
         else:
             app_models[model] = 'down'
-    elif r.status_code == 404:
+    except elasticsearch.NotFoundError:
         app_models[model] = 'na'
 
 
