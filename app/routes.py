@@ -252,7 +252,7 @@ def blog_search():
                 else:
                     search_response = q_and_a(question=form.searchbox.data, full_text=form.searchboxBlogWindow.data)
                     return render_template('blog_search.html', title='Blog search', form=form,
-                                           qa_results=search_response.body,
+                                           qa_results=search_response,
                                            query=form.searchbox.data, te_model_up=True, qa_model_up=qa_model,
                                            missing_index=False)
             else:
@@ -357,7 +357,6 @@ def knn_blogs_embeddings(dense_vector: list, filter: str):
     }
 
     if len(filter) > 0:
-        print('ss')
         fltr = {
             "term": {
               "byline.keyword": filter
