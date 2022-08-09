@@ -7,5 +7,5 @@ class SearchBlogsForm(FlaskForm):
     searchbox = StringField('What are you looking for?', validators=[DataRequired()])
     # searchboxAuthor = StringField('Author', validators=[DataRequired()])
     searchboxAuthor = StringField('Author')
-    searchboxBlogWindow = TextAreaField('Text')
+    searchboxBlogWindow = TextAreaField('Which text should I look for answers (QnA)?')
     submit = SubmitField('Search')
