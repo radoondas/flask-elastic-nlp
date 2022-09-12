@@ -287,7 +287,7 @@ def knn_search_images(dense_vector: list):
         "num_candidates": 100
     }
 
-    response = es.knn_search(
+    response = es.search(
         index=INDEX_IM_EMBED,
         fields=source_fields,
         knn=query, source=False)
@@ -321,7 +321,7 @@ def knn_les_miserable_embeddings(dense_vector: list):
         "num_candidates": 10
     }
 
-    response = es.knn_search(
+    response = es.search(
         index=INDEX_LES_MIS,
         fields=source_fields,
         knn=query,
@@ -362,14 +362,14 @@ def knn_blogs_embeddings(dense_vector: list, filter: str):
               "byline.keyword": filter
             }
         }
-        response = es.knn_search(
+        response = es.search(
             index=INDEX_BLOG_SEARCH,
             fields=source_fields,
             knn=query,
             filter=fltr,
             source=False)
     else:
-        response = es.knn_search(
+        response = es.search(
             index=INDEX_BLOG_SEARCH,
             fields=source_fields,
             knn=query,
