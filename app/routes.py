@@ -349,26 +349,30 @@ def is_model_up_and_running(model: str):
 
 def knn_blogs_embeddings(dense_vector: list, filter: str):
     source_fields = ["body_content_window", "id", "title", "byline", "url"]
-    query = {
-        "field": "text_embedding.predicted_value",
-        "query_vector": dense_vector,
-        "k": 10,
-        "num_candidates": 30
-    }
-
     if len(filter) > 0:
-        fltr = {
-            "term": {
-              "byline.keyword": filter
+        query = {
+            "field": "text_embedding.predicted_value",
+            "query_vector": dense_vector,
+            "k": 10,
+            "num_candidates": 30,
+            "filter": {
+                "term": {
+                    "byline.keyword": filter
+                }
             }
         }
         response = es.search(
             index=INDEX_BLOG_SEARCH,
             fields=source_fields,
             knn=query,
-            filter=fltr,
             source=False)
     else:
+        query = {
+            "field": "text_embedding.predicted_value",
+            "query_vector": dense_vector,
+            "k": 10,
+            "num_candidates": 30
+        }
         response = es.search(
             index=INDEX_BLOG_SEARCH,
             fields=source_fields,
