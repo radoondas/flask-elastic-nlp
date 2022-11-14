@@ -4,17 +4,18 @@
 
 <h1 class="title">Blog search</h1>
 {% if not missing_index %}
-{% if te_model_up %}
-<section class="section">
-    <div class="box has-background-warning-light">
-        <p>
-            <b>Try one of the following examples:</b>
-        <ul>
-            <li>How to find anomalies in location data?</li>
-        </ul>
-        </p>
-    </div>
-    <form action="" method="post" novalidate>
+<form action="" method="post" novalidate>
+
+    {% if te_model_up %}
+    <section>
+        <div class="box has-background-warning-light">
+            <p>
+                <b>Try one of the following examples:</b>
+            <ul>
+                <li>How to find anomalies in location data?</li>
+            </ul>
+            </p>
+        </div>
         {{ form.hidden_tag() }}
         <p>
         <div class="container">
@@ -36,83 +37,97 @@
                     </p>
                 </div>
             </div>
-        {% if qa_model_up %}
-            <p>
+            {% if qa_model_up %}
+            <!-- <p>
                 {{ form.searchboxBlogWindow.label(class_="label") }}
-                <div class="field">
+            <div class="field">
                 {{ form.searchboxBlogWindow(size=50, class_="textarea is-info") }}
             </div>
+            </p> -->
+            {% else %}
+            <p>
+                Note: NLP search only. Model for Q&A is not available.
             </p>
-        {% else %}
-        <p>
-            Note: NLP search only. Model for Q&A is not available.
-        </p>
-        <br>
-        {% endif %}
+            <br>
+            {% endif %}
         </div>
         </p>
         <p>{{ form.submit(class_="button is-info") }}</p>
-    </form>
-</section>
 
-{% if search_results %}
+        {% if best_answer %}
+        <br />
+        Answer: <strong>{{ best_answer.predicted_value }}</strong></br>
+        Start offset: <strong>{{ best_answer.start_offset }}</strong></br>
+        End offset: <strong>{{ best_answer.end_offset }}</strong></br>
+        Prediction probability: <strong>{{ best_answer.prediction_probability }}</strong></br>
+        {% endif %}
 
-<section class="section">
-    <div class="container">
-        Search Query: {{ query }}
-        <hr>
-        <table class="table is-striped is-fullwidth">
-            <thead>
-            <tr>
-                <th><abbr title="Title">Title</abbr></th>
-                <th><abbr title="Author">Author</abbr></th>
-                <th><abbr title="Url">Url</abbr></th>
-                <th><abbr title="Content">Content</abbr></th>
-            </tr>
-            </thead>
-            {% for document in search_results %}
+    </section>
 
-            <tr>
-                <td>
-                    {{ document.fields.title[0] }}
-                </td>
-                <td>
-                    {% for author in document.fields.byline %}
-                    {{ author }}</br> </br>
-                    {% endfor %}
-                </td>
-                <td>
-                    <a href="{{ document.fields.url[0] }}" target="_blank">{{ document.fields.url[0] }}</a>
-                </td>
-                <td>
-                    {{ document.fields.body_content_window[0] }}
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
-</section>
 
-{% endif %}
+    {% if search_results %}
 
-{% if qa_results %}
-<section class="section">
-    <div class="container">
-        Search Query: {{ query }}
-        <hr>
-        Answer: <strong>{{ qa_results.predicted_value }}</strong></br>
-        Start offset: <strong>{{ qa_results.start_offset }}</strong></br>
-        End offset: <strong>{{ qa_results.end_offset }}</strong></br>
-        Prediction probability: <strong>{{ qa_results.prediction_probability }}</strong></br>
+    <section class="section">
+        <div class="container">
+            Search Query: {{ query }}
+            <hr>
+            <table class="table is-striped is-fullwidth">
+                <thead>
+                    <tr>
+                        <th><abbr title="Title">Title</abbr></th>
+                        <th><abbr title="Author">Author</abbr></th>
+                        <th><abbr title="Url">Url</abbr></th>
+                        <th><abbr title="Content">Content</abbr></th>
 
-    </div>
-</section>
-{% endif %}
+                    </tr>
+                </thead>
+                {% for document in search_results %}
+
+                <tr>
+                    <td>
+                        {{ document.fields.title[0] }}
+                    </td>
+                    <td>
+                        {% for author in document.fields.byline %}
+                        <input type="submit" name="filter_by_author" value="{{ author }}" />
+                        {% endfor %}
+
+                    </td>
+                    <td>
+                        <a href="{{ document.fields.url[0] }}" target="_blank">{{ document.fields.url[0] }}</a>
+                    </td>
+                    <td>
+                        {{ document.fields.body_content_window[0] }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </section>
+
+    {% endif %}
+
+    {% if qa_results %}
+    <section>
+        <div class="container">
+            Search Query: {{ query }}
+            <hr>
+            Answer: <strong>{{ qa_results.predicted_value }}</strong></br>
+            Start offset: <strong>{{ qa_results.start_offset }}</strong></br>
+            End offset: <strong>{{ qa_results.end_offset }}</strong></br>
+            Prediction probability: <strong>{{ qa_results.prediction_probability }}</strong></br>
+
+        </div>
+    </section>
+    {% endif %}
+
+</form>
 
 {% else %}
 <div class="box has-background-danger-light">
     <p>
-        <strong> The NLP model ({{ model_name }}) required for this task is unavailable in Elasticsearch cluster. </br>Please make sure
+        <strong> The NLP model ({{ model_name }}) required for this task is unavailable in Elasticsearch cluster.
+            </br>Please make sure
             the model is up and running.</strong>
     </p>
 </div>
@@ -122,7 +137,8 @@
 {% else %}
 <div class="box has-background-danger-light">
     <p>
-        <strong> The Index ({{ index_name }}) required for this task is unavailable in Elasticsearch cluster. </br>Please make sure
+        <strong> The Index ({{ index_name }}) required for this task is unavailable in Elasticsearch cluster.
+            </br>Please make sure
             the index is available.</strong>
     </p>
 </div>

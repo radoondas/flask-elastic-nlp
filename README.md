@@ -49,18 +49,24 @@ $ docker-compose up -d
 ```
 Wait and check if the cluster is up and running using Kibana or `curl`.
 
+Once the cluster is up and running, let's get the CA certificate out from the Elasticsearch cluster, so we can use it in the rest of the setup.
+```bash
+$ docker cp elastic-nlp-85-es01-1://usr/share/elasticsearch/config/certs/ca/ca.crt ../app/conf/ca.crt
+$ cp ../app/conf/ca.crt ../embeddings/ca.crt
+```
+
 ### 2. Load NLP models 
 Let's load the models into the application. We use the `eland` python client to load the models. For more details, follow the [documentation](https://www.elastic.co/guide/en/elasticsearch/client/eland/current/index.html).
 
 In the main directory
 ```bash
 # wait until each model is loaded and started. If you do not have enough memory, you will see errors sometimes confusing
-$ eland_import_hub_model --url https://elastic:changeme@localhost:9200 --hub-model-id dslim/bert-base-NER --task-type ner --start --insecure
-$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/clip-ViT-B-32-multilingual-v1 --task-type text_embedding --start --insecure
-$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id distilbert-base-uncased-finetuned-sst-2-english --task-type text_classification --start --insecure
-$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id bert-base-uncased --task-type fill_mask --start --insecure
-$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/msmarco-MiniLM-L-12-v3 --task-type text_embedding --start --insecure
-$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id deepset/tinyroberta-squad2 --task-type question_answering --start --insecure
+$ eland_import_hub_model --url https://elastic:changeme@localhost:9200 --hub-model-id dslim/bert-base-NER --task-type ner --start --ca-certs app/conf/ca.crt
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/clip-ViT-B-32-multilingual-v1 --task-type text_embedding --start --ca-certs app/conf/ca.crt
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id distilbert-base-uncased-finetuned-sst-2-english --task-type text_classification --start --ca-certs app/conf/ca.crt
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id bert-base-uncased --task-type fill_mask --start --ca-certs app/conf/ca.crt
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id sentence-transformers/msmarco-MiniLM-L-12-v3 --task-type text_embedding --start --ca-certs app/conf/ca.crt
+$ eland_import_hub_model --url https://elastic:changeme@127.0.0.1:9200 --hub-model-id deepset/tinyroberta-squad2 --task-type question_answering --start --ca-certs app/conf/ca.crt
 ```
 You can verify that all models are up and running in Kibana: `Machine Learning -> Trained models`
 
@@ -78,7 +84,7 @@ Make sure that Python environment is set.
 ```bash
 $ cd embeddings
 $ python3 build-datasets.py --es_host "https://127.0.0.1:9200" --es_user "elastic" --es_password "changeme" \                                                                                                                                                             2 ↵
-  --no-verify_certs --delete_existing
+  --verify_certs --delete_existing
 ```
 
 ### 4. Run flask app

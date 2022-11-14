@@ -25,25 +25,31 @@ LES_MISERABLE_FILE = "les-miserable-embedded.json.zip"
 BLOGS_FOLDER = "blogs/"
 BLOGS_FILE = "blogs-with-embeddings.json.zip"
 
+CA_CERT='ca.crt'
+
 es = Elasticsearch(hosts='https://1270.0.0.1:9200')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--es_host', dest='es_host', required=False, default="https://127.0.0.1:9200",
-                    help="Elasticsearch hostname. Default: https://127.0.0.1:9200")
+                    help="Elasticsearch hostname. Must include HOST and PORT. Default: https://127.0.0.1:9200")
 parser.add_argument('--es_user', dest='es_user', required=False, default='elastic',
                     help="Elasticsearch username. Default: elastic")
 parser.add_argument('--es_password', dest='es_password', required=False, default='changeme',
                     help="Elasticsearch password. Default: changeme")
-parser.add_argument('--verify_certs', dest='verify_certs', required=False, action=argparse.BooleanOptionalAction,
-                    help="Verify certificates. Default: False")
+parser.add_argument('--verify_certs', dest='verify_certs', required=False, default=True,
+                    action=argparse.BooleanOptionalAction,
+                    help="Verify certificates. Default: True")
 parser.add_argument('--thread_count', dest='thread_count', required=False, default=4, type=int,
                     help="Number of indexing threads. Default: 4")
 parser.add_argument('--chunk_size', dest='chunk_size', required=False, default=1000, type=int,
                     help="")
 parser.add_argument('--timeout', dest='timeout', required=False, default=120, type=int,
                     help="Request timeout in seconds. Default: 120")
-parser.add_argument('--delete_existing', dest='delete_existing', required=False, action=argparse.BooleanOptionalAction,
+parser.add_argument('--delete_existing', dest='delete_existing', required=False, default=True,
+                    action=argparse.BooleanOptionalAction,
                     help="Delete existing indices if they are present in the cluster. Default: True")
+parser.add_argument('--ca_certs', dest='ca_certs', required=False, default=CA_CERT,
+                    help="CA certificates. Default: ca.crt")
 
 args = parser.parse_args()
 
@@ -53,9 +59,9 @@ def main():
     global es
 
     # Initialize the client
-    # TODO: args.verify_certs does not work correctly when read from the arguments
     es = Elasticsearch(hosts=[args.es_host], basic_auth=(args.es_user, args.es_password),
-                       verify_certs=args.verify_certs, request_timeout=args.timeout)
+                       verify_certs=args.verify_certs, request_timeout=args.timeout,
+                       ca_certs=args.ca_certs)
 
     # Import images dataset
     import_image_dataset()

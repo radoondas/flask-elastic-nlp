@@ -1,12 +1,11 @@
-from app import app, img_model, es
-from flask import render_template, redirect, url_for, request
+from app import app, img_model, es, executor
+from flask import render_template, redirect, url_for, request, Markup
 from app.searchForm import SearchForm
 from app.searchBlogsForm import SearchBlogsForm
 from app.inputFileForm import InputFileForm
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 import elasticsearch
-# import requests
 import os
 from PIL import Image
 
@@ -50,8 +49,39 @@ def search():
 
     if app_models.get(INFER_MODEL_IM_SEARCH) == 'started':
         form = SearchForm()
+
         # Check for  method
         if request.method == 'POST':
+
+            if 'find_similar_item' in request.form and request.form['find_similar_item'] is not None:
+                image_id_to_search_for = request.form['find_similar_item']
+                form.searchbox.data = None
+
+                image_info = es.search(
+                    index=INDEX_IM_EMBED,
+                    query={
+                        "term": {
+                            "photo_id": {
+                                "value": image_id_to_search_for,
+
+                                "boost": 1.0
+                            }
+                        }
+                    },
+                    source=True)
+
+                if (image_info is not None):
+
+                    found_image = image_info['hits']['hits'][0]["_source"]
+                    found_image_embedding = found_image['image_embedding']
+                    search_response = knn_search_images(
+                        found_image_embedding)
+
+                    return render_template('search.html', title='Image Search', form=form,
+                                           search_results=search_response['hits']['hits'],
+                                           query=form.searchbox.data, model_up=True,
+                                           image_id_to_search_for=image_id_to_search_for)
+
             if form.validate_on_submit():
                 embeddings = sentence_embedding(form.searchbox.data)
                 search_response = knn_search_images(embeddings['predicted_value'])
@@ -222,13 +252,21 @@ def similar_image():
                                model_name=INFER_MODEL_IM_SEARCH)
 
 
+def get_text(hit: dict):
+    if ('fields' in hit):
+        full_text = (
+            hit['fields']['body_content_window'][0])
+        return full_text
+
+
 @app.route('/blog_search', methods=['GET', 'POST'])
-def blog_search():
+async def blog_search():
     global app_models
     is_model_up_and_running(INFER_MODEL_TEXT_EMBEDDINGS)
     is_model_up_and_running(INFER_MODEL_Q_AND_A)
 
-    qa_model = True if app_models.get(INFER_MODEL_Q_AND_A) == 'started' else False
+    qa_model = True if app_models.get(
+        INFER_MODEL_Q_AND_A) == 'started' else False
     index_name = INDEX_BLOG_SEARCH
 
     if not es.indices.exists(index=index_name):
@@ -237,20 +275,66 @@ def blog_search():
 
     if app_models.get(INFER_MODEL_TEXT_EMBEDDINGS) == 'started':
         form = SearchBlogsForm()
+
         # Check for method
         if request.method == 'POST':
+
             if form.validate_on_submit():
+                if ('filter_by_author' in request.form):
+                    form.searchboxAuthor.data = request.form['filter_by_author']
+
                 if form.searchboxBlogWindow.data is None or len(form.searchboxBlogWindow.data) == 0:
-                    embeddings_response = infer_trained_model(form.searchbox.data, INFER_MODEL_TEXT_EMBEDDINGS)
+
+                    embeddings_response = infer_trained_model(
+                        form.searchbox.data, INFER_MODEL_TEXT_EMBEDDINGS)
+
                     search_response = knn_blogs_embeddings(embeddings_response['predicted_value'],
                                                            form.searchboxAuthor.data)
+                    cfg = {
+                        "question_answering": {
+                            "question": form.searchbox.data,
+                            "max_answer_length": 30
+                        }
+                    }
+
+                    hits_with_answers = search_response['hits']['hits']
+
+                    answers = executor.map(q_and_a, map(lambda hit: hit["_id"], hits_with_answers),
+                                           map(lambda hit: form.searchbox.data, hits_with_answers),
+                                           map(lambda hit: get_text(hit=hit), hits_with_answers))
+
+                    best_answer = None
+                    for i in range(0, len(hits_with_answers)):
+                        hit_with_answer = hits_with_answers[i]
+
+                        matched_answer = next(
+                            (obj['result'] for obj in answers if obj["_id"] == hit_with_answer["_id"]), None)
+
+                        if (matched_answer is not None):
+                            hit_with_answer['answer'] = matched_answer
+                            if (best_answer is None or (
+                                    matched_answer is not None and 'prediction_probability' in matched_answer and
+                                    matched_answer['prediction_probability'] > best_answer['prediction_probability'])):
+                                best_answer = matched_answer
+
+                            start_idx = matched_answer['start_offset']
+                            end_idx = matched_answer['end_offset']
+
+                            text = hits_with_answers[i]['fields']['body_content_window'][0]
+                            text_with_highlighted_answer = Markup(''.join([text[0:start_idx - 1],
+                                                                           "<b>", text[start_idx -
+                                                                                       1:end_idx],
+                                                                           "</b>", text[end_idx:]]))
+                            hits_with_answers[i]['fields']['body_content_window'][0] = text_with_highlighted_answer
 
                     return render_template('blog_search.html', title='Blog search', form=form,
-                                           search_results=search_response['hits']['hits'],
+                                           search_results=hits_with_answers,
+                                           best_answer=best_answer,
                                            query=form.searchbox.data, te_model_up=True, qa_model_up=qa_model,
                                            missing_index=False)
                 else:
-                    search_response = q_and_a(question=form.searchbox.data, full_text=form.searchboxBlogWindow.data)
+                    search_response = q_and_a(
+                        question=form.searchbox.data, full_text=form.searchboxBlogWindow.data)
                     return render_template('blog_search.html', title='Blog search', form=form,
                                            qa_results=search_response,
                                            query=form.searchbox.data, te_model_up=True, qa_model_up=qa_model,
@@ -259,7 +343,7 @@ def blog_search():
                 return redirect(url_for('blog_search'))
         else:  # GET
             return render_template('blog_search.html', title='Blog Search', form=form, te_model_up=True,
-                                   qa_model_up=qa_model, missing_index=False)
+                               qa_model_up=qa_model, missing_index=False)
     else:
         return render_template('blog_search.html', title='Blog search', te_model_up=False, qa_model_up=qa_model,
                                model_name=INFER_MODEL_TEXT_EMBEDDINGS, missing_index=False)
@@ -279,7 +363,7 @@ def sentence_embedding(query: str):
 
 def knn_search_images(dense_vector: list):
     source_fields = ["photo_description", "ai_description", "photo_url", "photo_image_url", "photographer_first_name",
-                     "photographer_username", "photographer_last_name"]
+                     "photographer_username", "photographer_last_name", "photo_id"]
     query = {
         "field": "image_embedding",
         "query_vector": dense_vector,
@@ -382,7 +466,7 @@ def knn_blogs_embeddings(dense_vector: list, filter: str):
     return response
 
 
-def q_and_a(question: str, full_text: str):
+def q_and_a(id: str, question: str, full_text: str):
     cfg = {
         "question_answering": {
             "question": question,
@@ -391,4 +475,4 @@ def q_and_a(question: str, full_text: str):
     }
     response = es.ml.infer_trained_model(model_id=INFER_MODEL_Q_AND_A, docs=[{"text_field": full_text}],
                                          inference_config=cfg)
-    return response['inference_results'][0]
+    return {"_id": id, "result": response['inference_results'][0]}
