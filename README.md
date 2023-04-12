@@ -119,7 +119,7 @@ To run the application, we need to run the Docker image.
 #### Using local (Docker) Elastic stack
 From the CLI we need to run the image using the `docker run` command.
 ```bash
-$ docker run --network elastic-nlp_default -p 5001:5001  \
+$ docker run --network elastic-nlp-85_default -p 5001:5001  \
   -e ES_HOST='https://es01:9200' -e ES_USER='elastic' \
   -e ES_PWD='changeme' elastic-nlp/flask-nlp:0.0.1
 ```
